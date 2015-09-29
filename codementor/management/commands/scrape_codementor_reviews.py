@@ -29,8 +29,10 @@ class ReviewSpider(Spider):
                                                                        content=review_content)
             if existing_reviews.count() == 0:
                 # This will group reviews by people with the same display name
-                reviewer, _ = codementor_models.Client.objects.get_or_create(name=reviewer_name)
-                reviewer.save()
+                reviewer, created = codementor_models.Client.objects.get_or_create(
+                    name=reviewer_name)
+                if created:
+                    reviewer.save()
                 review = codementor_models.Review(reviewer=reviewer,
                                                   date=review_date,
                                                   content=review_content)
