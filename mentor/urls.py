@@ -16,6 +16,10 @@ Including another URLconf
 from django.conf.urls import include, url
 from django.contrib import admin
 
+from codementor import urls as codementor_urls
+
+
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
+    url(r'^', include(codementor_urls), name='codementor'),
 ]

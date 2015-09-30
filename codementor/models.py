@@ -78,4 +78,4 @@ class Payment(models.Model):
 
     def __str__(self):
         return '%s (%s) - %s - %s' % (self.earnings, self.length_minutes(),
-                                          self.date, self.client)
+                                      self.date, self.client)

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Statistics for {{ user.get_full_name }}{% endblock %}
+
+{% block head %}
+  {% load staticfiles %}
+  <script type='text/javascript'
+          src='//cdnjs.cloudflare.com/ajax/libs/highstock/2.1.4/highstock.js'></script>
+  <script type='text/javascript' src="{% static 'codementor/js/statistics.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+  <div>
+    <select id="id_select_statistics">
+      <option value="statistics">Statistics</option>
+    {% for graph_type in graph_types %}
+      <option value="{{ graph_type.0 }}">{{ graph_type.1 }}</option>
+    {% endfor %}
+  </select>
+  </div>
+
+  <div id="id_statistics" class="statistics">
+    <h4>Statistics for {{ user.get_full_name }}</h4>
+
+    <table class="table-condensed">
+      <tr>
+        <th colspan="2">Payment Statistics</th>
+      </tr>
+      <tr>
+        <td>Total Payouts:</td>
+        <td>{{ payouts|length }}</td>
+      </tr>
+      <tr>
+        <td>Most Recent:</td>
+        <td>{{ payouts|first }}</td>
+      </tr>
+      <tr>
+        <td>First:</td>
+        <td>{{ payouts|last }}</td>
+      </tr>
+    </table>
+  </div>
+
+  {% for graph_type in graph_types %}
+    <div id="id_{{ graph_type.0 }}" class="statistics"></div>
+  {% endfor %}
+
+  <div class="statistics payout_history_error payment_history_error hours_worked_error">
+    No payment history found.
+  </div>
+
+{% endblock %}

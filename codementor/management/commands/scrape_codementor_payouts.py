@@ -94,7 +94,7 @@ class PayoutSpider(Spider):
         payouts = response.xpath('//div[@id="paid_panel"]/div[contains(@class, "customize_panel")]')
         for payout_data in payouts:
             payout_info_text = payout_data.xpath('./div/a/div[contains(@class, "fluid")]/'
-                                            'div/div[contains(@class, "info")]/text()')
+                                                 'div/div[contains(@class, "info")]/text()')
             payout_info = payout_info_text.extract()
             payout_date = dateutil.parser.parse(payout_info[2].strip()).date()
             payout_method = codementor_models.PayoutMethod.get(payout_info[3].strip().upper()).value
