@@ -40,6 +40,11 @@ class Payout(models.Model):
     class Meta:
         ordering = ['-date']
 
+    @property
+    def total_earnings(self):
+        total_earnings = self.payments.all().aggregate(models.Sum('earnings'))
+        return total_earnings['earnings__sum']
+
     def __str__(self):
         return '%s (%s)' % (self.amount, self.date)
 

@@ -40,7 +40,9 @@ class PayoutSpider(Spider):
             callback=self.parse_payouts
         )
 
-    def parse_payments(self, payout_data):
+    # TODO parse payments not yet attached to a payout
+
+    def parse_payments(self, payout, payout_data):
         payments = payout_data.xpath('./div[contains(@class, "panel-collapse")]/div'
                                      '/div[@class="row-fluid"]')
         for payment in payments:
@@ -63,7 +65,8 @@ class PayoutSpider(Spider):
                 client, created = codementor_models.Client.objects.get_or_create(name=client_name)
                 if created:
                     client.save()
-                payment = codementor_models.Payment(date=payment_date,
+                payment = codementor_models.Payment(payout=payout,
+                                                    date=payment_date,
                                                     client=client,
                                                     earnings=earnings)
 
@@ -98,7 +101,7 @@ class PayoutSpider(Spider):
                                                   method=payout_method,
                                                   amount=payout_amount)
                 payout.save()
-                self.parse_payments(payout_data)
+                self.parse_payments(payout, payout_data)
 
 
 class Command(NoArgsCommand):
