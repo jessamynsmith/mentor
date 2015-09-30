@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db import models
 from django_enumfield import enum
 
@@ -36,14 +38,10 @@ class Payout(models.Model):
     date = models.DateField()
     method = enum.EnumField(PayoutMethod, default=PayoutMethod.PAYPAL)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    total_earnings = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0'))
 
     class Meta:
         ordering = ['-date']
-
-    @property
-    def total_earnings(self):
-        total_earnings = self.payments.all().aggregate(models.Sum('earnings'))
-        return total_earnings['earnings__sum']
 
     def __str__(self):
         return '%s (%s)' % (self.amount, self.date)

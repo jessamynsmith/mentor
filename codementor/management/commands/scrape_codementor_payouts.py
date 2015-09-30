@@ -45,6 +45,7 @@ class PayoutSpider(Spider):
     def parse_payments(self, payout, payout_data):
         payments = payout_data.xpath('./div[contains(@class, "panel-collapse")]/div'
                                      '/div[@class="row-fluid"]')
+        total_earnings = Decimal('0')
         for payment in payments:
             payment_info_div = payment.xpath('./div/div[@class="info_padding"]')
             payment_info = payment_info_div.xpath('./text()').extract()
@@ -56,6 +57,7 @@ class PayoutSpider(Spider):
             if not earnings_amount:
                 earnings_amount = payment_info[4].strip()
             earnings = Decimal(earnings_amount.replace('$', '').replace(',', ''))
+            total_earnings += earnings
 
             existing_payments = codementor_models.Payment.objects.filter(date=payment_date,
                                                                          client__name=client_name,
@@ -84,6 +86,9 @@ class PayoutSpider(Spider):
                     payment.length = length.hour * 60 * 60 + length.minute * 60 + length.second
 
                 payment.save()
+
+            payout.total_earnings = total_earnings
+            payout.save()
 
     def parse_payouts(self, response):
         payouts = response.xpath('//div[@id="paid_panel"]/div[contains(@class, "customize_panel")]')
