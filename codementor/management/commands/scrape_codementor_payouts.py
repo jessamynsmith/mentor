@@ -100,6 +100,7 @@ class PayoutSpider(Spider):
             payout_method = codementor_models.PayoutMethod.get(payout_info[3].strip().upper()).value
             payout_amount = Decimal(payout_info[5].strip().replace('$', '').replace(',', ''))
 
+            # What about tips?
             existing_payouts = codementor_models.Payout.objects.filter(date=payout_date)
             if existing_payouts.count() == 0:
                 payout = codementor_models.Payout(date=payout_date,
