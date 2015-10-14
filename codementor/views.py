@@ -47,13 +47,13 @@ def hours_worked(request):
     payments = codementor_models.Payment.objects.all().order_by('date')
     data = {}
     if payments:
-        payment_values = payments.values_list('date').annotate(total_seconds=Sum('length'))
+        payment_values = payments.values_list('date').annotate(total_minutes=Sum('length'))
 
         hours = []
-        for [date, seconds] in payment_values:
+        for [date, minutes] in payment_values:
             total_hours = 0
-            if seconds:
-                total_hours = round(seconds/(60*60.0), 1)
+            if minutes:
+                total_hours = round(minutes/60.0, 1)
             hours.append([date.strftime(DATE_FORMAT), total_hours])
 
         data = {

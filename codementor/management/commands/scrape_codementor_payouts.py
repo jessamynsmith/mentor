@@ -83,7 +83,8 @@ class PayoutSpider(Spider):
                     payment.type = codementor_models.PaymentType.MONTHLY
                 else:
                     length = dateutil.parser.parse(length_or_type)
-                    payment.length = length.hour * 60 * 60 + length.minute * 60 + length.second
+                    length_seconds = length.hour * 60 * 60 + length.minute * 60 + length.second
+                    payment.length = int(round(length_seconds/60.0))
 
                 payment.save()
 

@@ -64,18 +64,13 @@ class Payment(models.Model):
     payout = models.ForeignKey(Payout, null=True, blank=True, related_name='payments')
     type = enum.EnumField(PaymentType, default=PaymentType.SESSION)
     date = models.DateField()
-    length = models.IntegerField(null=True, blank=True)  # in seconds
+    length = models.IntegerField(null=True, blank=True)  # in minutes
     free_preview = models.BooleanField(default=False)
     earnings = models.DecimalField(max_digits=10, decimal_places=2)
 
     class Meta:
         ordering = ['-date']
 
-    def length_minutes(self):
-        if not self.length:
-            return PaymentType.get(self.type).label
-        return '%s min' % int(round(self.length/60.0))
-
     def __str__(self):
-        return '%s (%s) - %s - %s' % (self.earnings, self.length_minutes(),
+        return '%s (%s) - %s - %s' % (self.earnings, self.length,
                                       self.date, self.client)
