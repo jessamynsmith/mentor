@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Statistics for {{ user.get_full_name }}{% endblock %}
+{% block title %}Statistics{% endblock %}
 
 {% block head %}
   {% load staticfiles %}
@@ -20,23 +20,83 @@
   </div>
 
   <div id="id_statistics" class="statistics">
-    <h4>Statistics for {{ user.get_full_name }}</h4>
+    <table class="table-condensed">
+      <tr>
+        <th colspan="2">Payout Statistics</th>
+      </tr>
+      <tr>
+        <td>Number of Payouts:</td>
+        <td>{{ total_payouts }}</td>
+      </tr>
+      <tr>
+        <td>Average Payout:</td>
+        <td>{{ average_payout }}</td>
+      </tr>
+      <tr>
+        <td>Total Paid:</td>
+        <td>{{ payout_total }}</td>
+      </tr>
+      <tr>
+        <td>Total Earned:</td>
+        <td>{{ earnings_total }}</td>
+      </tr>
+      <tr>
+        <td>Highest:</td>
+        <td>{{ highest_payout }}</td>
+      </tr>
+      <tr>
+        <td>Lowest:</td>
+        <td>{{ lowest_payout }}</td>
+      </tr>
+      <tr>
+        <td>Most Recent:</td>
+        <td>{{ last_payout }}</td>
+      </tr>
+      <tr>
+        <td>Oldest:</td>
+        <td>{{ first_payout }}</td>
+      </tr>
+    </table>
 
     <table class="table-condensed">
       <tr>
         <th colspan="2">Payment Statistics</th>
       </tr>
       <tr>
-        <td>Total Payouts:</td>
-        <td>{{ payouts|length }}</td>
+        <td>Pending Payment Amount:</td>
+        <td>{{ pending_total }}</td>
       </tr>
       <tr>
-        <td>Most Recent:</td>
-        <td>{{ payouts|first }}</td>
+        <td>Number of Payments:</td>
+        <td>{{ number_of_payments }}</td>
       </tr>
       <tr>
-        <td>First:</td>
-        <td>{{ payouts|last }}</td>
+        <td>Number of Sessions:</td>
+        <td>{{ number_of_sessions }}</td>
+      </tr>
+      <tr>
+        <td>Session Total:</td>
+        <td>{{ session_total }}</td>
+      </tr>
+      <tr>
+        <td>Offline Payment Total:</td>
+        <td>{{ offline_payment_total }}</td>
+      </tr>
+      <tr>
+        <td>Monthly Payment Total:</td>
+        <td>{{ monthly_payment_total }}</td>
+      </tr>
+      <tr>
+        <td>Average Payment:</td>
+        <td>{{ average_payment|floatformat:2 }}</td>
+      </tr>
+      <tr>
+        <td>Average Session Length (Minutes):</td>
+        <td>{{ average_session_length }}</td>
+      </tr>
+      <tr>
+        <td>Hours Worked:</td>
+        <td>{{ hours_worked }}</td>
       </tr>
     </table>
   </div>
