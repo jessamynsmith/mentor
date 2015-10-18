@@ -22,7 +22,7 @@ class ReviewSpider(Spider):
             review_info = review_info_text.extract()
             reviewer_name = review_info[0]
             review_date = dateutil.parser.parse(review_info[1]).date()
-            review_content_text = review.xpath('./div[contains(@class, "content")]/text()')
+            review_content_text = review.xpath('./div[contains(@class, "content")]/div/text()')
             review_content = review_content_text.extract()[0].strip()
             existing_reviews = codementor_models.Review.objects.filter(reviewer__name=reviewer_name,
                                                                        date=review_date,
