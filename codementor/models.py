@@ -16,7 +16,7 @@ class Client(models.Model):
 
 class Review(models.Model):
     reviewer = models.ForeignKey(Client, related_name='reviews')
-    date = models.DateField()
+    date = models.DateTimeField()
     content = models.TextField()
 
     class Meta:
@@ -35,7 +35,7 @@ class PayoutMethod(enum.Enum):
 
 
 class Payout(models.Model):
-    date = models.DateField()
+    date = models.DateTimeField()
     method = enum.EnumField(PayoutMethod, default=PayoutMethod.PAYPAL)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     total_earnings = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0'))
@@ -44,7 +44,7 @@ class Payout(models.Model):
         ordering = ['-date']
 
     def __str__(self):
-        return '%s (%s)' % (self.amount, self.date)
+        return '%s (%s)' % (self.amount, self.date.date())
 
 
 class PaymentType(enum.Enum):
@@ -63,7 +63,7 @@ class Payment(models.Model):
     client = models.ForeignKey(Client, related_name='payments')
     payout = models.ForeignKey(Payout, null=True, blank=True, related_name='payments')
     type = enum.EnumField(PaymentType, default=PaymentType.SESSION)
-    date = models.DateField()
+    date = models.DateTimeField()
     length = models.IntegerField(null=True, blank=True)  # in minutes
     free_preview = models.BooleanField(default=False)
     earnings = models.DecimalField(max_digits=10, decimal_places=2)

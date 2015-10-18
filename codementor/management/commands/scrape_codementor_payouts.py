@@ -2,6 +2,7 @@ import dateutil.parser
 from decimal import Decimal
 from optparse import make_option
 import os
+import pytz
 from scrapy import FormRequest, Request
 from scrapy.spiders import Spider
 from scrapy.crawler import CrawlerProcess
@@ -17,11 +18,22 @@ class PayoutSpider(Spider):
     start_urls = [
         "https://www.codementor.io/users/sign_in"
     ]
+    known_timezones = {
+        'Pacific Time': 'US/Pacific',
+        'Mountain Time': 'US/Mountain',
+        'Central Time': 'US/Central',
+        'Eastern Time': 'US/Eastern',
+    }
+
+    def __init__(self, **kwargs):
+        super(PayoutSpider, self).__init__()
+        self.username = os.environ.get('CODEMENTOR_USERNAME')
+        self.password = os.environ.get('CODEMENTOR_PASSWORD')
 
     def parse(self, response):
         login_form = {
-            'login': os.environ.get('CODEMENTOR_USERNAME'),
-            'password': os.environ.get('CODEMENTOR_PASSWORD'),
+            'login': self.username,
+            'password': self.password,
         }
         return FormRequest.from_response(
             response,
@@ -31,9 +43,21 @@ class PayoutSpider(Spider):
 
     def after_login(self, response):
         # If login failed, error out
-        if "Jessamyn Smith" not in response.body:
+        profile_link = "<a href='/%s'>" % self.username
+        if profile_link not in response.body:
             self.logger.error("Login failed")
             return
+
+        return Request(
+            "https://www.codementor.io/%s" % self.username,
+            callback=self.get_timezone
+        )
+
+    def get_timezone(self, response):
+        timezone_div = response.xpath('//div[contains(@class, "timezone")]')
+        timezone_text = timezone_div.xpath('./text()').extract()[1]
+        timezone_name = timezone_text.split('(')[0].strip()
+        self.timezone = pytz.timezone(self.known_timezones[timezone_name])
 
         return Request(
             "https://www.codementor.io/users/payout_history",
@@ -43,9 +67,11 @@ class PayoutSpider(Spider):
     def parse_date(self, date_text):
         payment_date = None
         try:
-            payment_date = dateutil.parser.parse(date_text.strip()).date()
+            naive_date = dateutil.parser.parse(date_text.strip())
+            local_date = self.timezone.localize(naive_date)
+            payment_date = local_date.astimezone(pytz.UTC)
         except ValueError:
-            print("Cannot parse date: '%s'" % date_text.strip())
+            self.logger.warning("Cannot parse date: '%s'" % date_text.strip())
         return payment_date
 
     def parse_amount(self, amount_text):
@@ -66,7 +92,6 @@ class PayoutSpider(Spider):
         return payment_length, payment_type
 
     def has_free_preview(self, payment_div):
-        # TODO verify that free preview detection works for pending payments
         free_preview = False
         free_text = payment_div.xpath('./div/text()').extract()
         if len(free_text) > 0:
@@ -104,7 +129,7 @@ class PayoutSpider(Spider):
             client_name = payment_info[1].strip()
             length_or_type_text = payment_info[2]
 
-            # For offline payments earnings are at index 3, for sessions they are at index 4
+            # Sessions with 15min free have an extra div inserted, so earnings are offset by 1
             earnings_amount = payment_info[3].strip()
             if not earnings_amount:
                 earnings_amount = payment_info[4].strip()
@@ -129,14 +154,17 @@ class PayoutSpider(Spider):
                 continue
             client_name = payment_info[1].strip()
 
-            if len(payment_info) == 4:
-                # For sessions, length is at index 2 and amount is at index 3
-                length_or_type_text = payment_info[2]
-                earnings_amount = payment_info[3]
-            else:
+            if len(payment_info) < 4:
                 # For offline help payments, there is no length and amount is at index 2
                 length_or_type_text = "Offline Help"
                 earnings_amount = payment_info[2]
+            else:
+                # For sessions, length is at index 2 and amount is after
+                length_or_type_text = payment_info[2]
+                earnings_amount = payment_info[3].strip()
+                # Sessions with 15min free have an extra div inserted, so earnings are offset by 1
+                if not earnings_amount:
+                    earnings_amount = payment_info[4].strip()
 
             payment = self.get_or_create_payment(payment_div, payment_date, client_name,
                                                  earnings_amount, length_or_type_text)
