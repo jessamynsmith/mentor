@@ -1,3 +1,4 @@
+import datetime
 import dateutil.parser
 from decimal import Decimal
 from optparse import make_option
@@ -50,19 +51,70 @@ class PayoutSpider(Spider):
 
         return Request(
             "https://www.codementor.io/%s" % self.username,
-            callback=self.get_timezone
+            callback=self.parse_timezone_and_reviews
         )
 
-    def get_timezone(self, response):
+    def parse_timezone_and_reviews(self, response):
         timezone_div = response.xpath('//div[contains(@class, "timezone")]')
         timezone_text = timezone_div.xpath('./text()').extract()[1]
         timezone_name = timezone_text.split('(')[0].strip()
         self.timezone = pytz.timezone(self.known_timezones[timezone_name])
 
+        reviews = response.xpath('//div[contains(@class, "reviewModule")]')
+        for review in reviews:
+            review_info_text = review.xpath('./div[contains(@class, "reviewerName")]/span/text()')
+            review_info = review_info_text.extract()
+            reviewer_name = review_info[0]
+            review_date = self.parse_date(review_info[1])
+            review_content_text = review.xpath('./div[contains(@class, "content")]/div/text()')
+            review_content = review_content_text.extract()[0].strip()
+
+            client = self.get_or_create_client(reviewer_name, review_date)
+            self.get_or_create_review(client, review_date, review_content)
+
+        return Request(
+            # HACK! Set the page number very high so as to retrieve all history
+            "https://www.codementor.io/templates/finished-sessions.html?page=100",
+            callback=self.parse_sessions
+        )
+
+    def parse_sessions(self, response):
+        sessions = response.xpath('//li[contains(@class, "question-header")]')
+        for session in sessions:
+            session_info = session.xpath('./div/div[contains(@class, "content")]')
+            client_name_text = session_info.xpath('./h4/text()').extract()[0]
+            client_name = client_name_text.replace('Session with', '').strip()
+
+            time_text = session_info.xpath('./p[contains(@class, "muted")]/text()').extract()[1]
+            time_pieces = time_text.split('\n')
+            finished_at = self.parse_date(time_pieces[2])
+            session_length = self.parse_length(time_pieces[4].replace('Length:', ''))
+            started_at = finished_at - datetime.timedelta(minutes=session_length)
+
+            client = self.get_or_create_client(client_name, started_at)
+
+            review = None
+
+            review_div = session.xpath('./div[contains(@class, "confirm")]/div/div/'
+                                       'div[contains(@class, "ng-non-bindable")]')
+            if review_div:
+                review_content = review_div.xpath('./text()').extract()[0].strip()
+                review = self.get_or_create_review(client, finished_at, review_content)
+
+            self.get_or_create_session(client, started_at, session_length, review)
+
         return Request(
             "https://www.codementor.io/users/payout_history",
             callback=self.parse_payouts
         )
+
+    def parse_length(self, length_text):
+        length_text = length_text.strip()
+        if length_text == "0 secs":
+            return 0
+        length = dateutil.parser.parse(length_text)
+        length_seconds = length.hour * 60 * 60 + length.minute * 60 + length.second
+        return int(round(length_seconds / 60.0))
 
     def parse_date(self, date_text):
         payment_date = None
@@ -77,19 +129,15 @@ class PayoutSpider(Spider):
     def parse_amount(self, amount_text):
         return Decimal(amount_text.strip().replace('$', '').replace(',', ''))
 
-    def parse_length_and_type(self, length_or_type_text):
+    def parse_payment_type(self, length_or_type_text):
         length_or_type_text = length_or_type_text.strip()
         payment_type = codementor_models.PaymentType.SESSION
-        payment_length = None
         if length_or_type_text == "Offline Help":
             payment_type = codementor_models.PaymentType.OFFLINE_HELP
         elif length_or_type_text.find("Monthly") > 0:
             payment_type = codementor_models.PaymentType.MONTHLY
-        else:
-            length = dateutil.parser.parse(length_or_type_text)
-            length_seconds = length.hour * 60 * 60 + length.minute * 60 + length.second
-            payment_length = int(round(length_seconds/60.0))
-        return payment_length, payment_type
+
+        return payment_type
 
     def has_free_preview(self, payment_div):
         free_preview = False
@@ -98,24 +146,49 @@ class PayoutSpider(Spider):
             free_preview = True
         return free_preview
 
+    def get_or_create_client(self, client_name, started_at):
+        # NOTE! This will group payments by people with the same display name
+        client, created = codementor_models.Client.objects.get_or_create(name=client_name)
+        if created:
+            client.save()
+        if not client.started_at or started_at < client.started_at:
+            client.started_at = started_at
+            client.save()
+        return client
+
+    def get_or_create_review(self, client, review_date, content):
+        # Can't use get_or_create here because dates show up slightly differently between the
+        # sessions page and the reviews page.
+        reviews = codementor_models.Review.objects.filter(reviewer=client, content=content)
+        if reviews.count() > 0:
+            review = reviews[0]
+        else:
+            review = codementor_models.Review(reviewer=client, date=review_date, content=content)
+            review.save()
+        return review
+
+    def get_or_create_session(self, client, started_at, length, review):
+        session, created = codementor_models.Session.objects.get_or_create(
+            client=client, started_at=started_at, length=length)
+        if created:
+            session.review = review
+            session.save()
+        return review
+
     def get_or_create_payment(self, payment_div, payment_date, client_name, earnings_amount,
                               length_or_type_text):
         earnings = self.parse_amount(earnings_amount)
         try:
-            payment = codementor_models.Payment.objects.get(date=payment_date,
-                                                            client__name=client_name,
-                                                            earnings=earnings)
+            payment = codementor_models.Payment.objects.get(
+                date=payment_date, client__name=client_name, earnings=earnings)
         except codementor_models.Payment.DoesNotExist:
-            # This will group payments by people with the same display name
-            client, created = codementor_models.Client.objects.get_or_create(name=client_name)
-            if created:
-                client.save()
+            client = self.get_or_create_client(client_name, payment_date)
             payment = codementor_models.Payment(date=payment_date,
                                                 client=client,
                                                 earnings=earnings)
 
         payment.free_preview = self.has_free_preview(payment_div)
-        payment.length, payment.type = self.parse_length_and_type(length_or_type_text)
+        payment.type = self.parse_payment_type(length_or_type_text)
         return payment
 
     def parse_payments(self, payout, payout_data):
@@ -184,9 +257,8 @@ class PayoutSpider(Spider):
 
             existing_payouts = codementor_models.Payout.objects.filter(date=payout_date)
             if existing_payouts.count() == 0:
-                payout = codementor_models.Payout(date=payout_date,
-                                                  method=payout_method,
-                                                  amount=payout_amount)
+                payout = codementor_models.Payout(
+                    date=payout_date, method=payout_method, amount=payout_amount)
                 payout.save()
                 self.parse_payments(payout, payout_data)
 
@@ -202,8 +274,10 @@ class Command(NoArgsCommand):
     def handle(self, *args, **options):
         delete = options.get('delete')
         if delete:
-            codementor_models.Payment.objects.all().delete()
+            codementor_models.Review.objects.all().delete()
+            codementor_models.Session.objects.all().delete()
             codementor_models.Payout.objects.all().delete()
+            codementor_models.Payment.objects.all().delete()
 
         process = CrawlerProcess({
             'USER_AGENT': 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)'

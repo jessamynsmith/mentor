@@ -5,6 +5,12 @@ from django.db.models import Avg, Sum
 from codementor import models
 
 
+class ClientAdmin(admin.ModelAdmin):
+    list_display = ['name', 'started_at', 'continent', 'gender', 'race_list']
+    list_filter = ['continent', 'gender', 'races__name', 'started_at']
+    search_fields = ['name']
+
+
 class ReviewAdmin(admin.ModelAdmin):
     list_display = ['reviewer', 'date', 'content']
     list_filter = ['date', 'reviewer']
@@ -58,7 +64,7 @@ class PayoutAdmin(admin.ModelAdmin):
 
 
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ['client', 'payout', 'date', 'type', 'length', 'free_preview', 'earnings']
+    list_display = ['client', 'payout', 'date', 'type', 'free_preview', 'earnings']
     list_filter = ['type', 'date', 'free_preview', 'payout']
     search_fields = ['client__name']
 
@@ -67,7 +73,15 @@ class PaymentAdmin(admin.ModelAdmin):
         return SumAverageChangeList
 
 
-admin.site.register(models.Client)
-admin.site.register(models.Review, ReviewAdmin)
-admin.site.register(models.Payout, PayoutAdmin)
+class SessionAdmin(admin.ModelAdmin):
+    list_display = ['client', 'started_at', 'length', 'review']
+    list_filter = ['started_at', 'client']
+    search_fields = ['client__name']
+
+
+admin.site.register(models.Client, ClientAdmin)
 admin.site.register(models.Payment, PaymentAdmin)
+admin.site.register(models.Payout, PayoutAdmin)
+admin.site.register(models.Race)
+admin.site.register(models.Review, ReviewAdmin)
+admin.site.register(models.Session, SessionAdmin)

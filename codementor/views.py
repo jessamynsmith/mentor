@@ -42,19 +42,32 @@ def payment_history(request):
     return JsonResponse(data)
 
 
+def _format_hours_worked_row(work_date, minutes):
+    total_hours = round(minutes / 60.0, 1)
+    return [work_date.strftime(DATE_FORMAT), total_hours]
+
+
 @login_required
 def hours_worked(request):
-    payments = codementor_models.Payment.objects.all().order_by('date')
+    payments = codementor_models.Session.objects.all().order_by('started_at')
     data = {}
     if payments:
-        payment_values = payments.values_list('date').annotate(total_minutes=Sum('length'))
+        payment_values = payments.values_list('started_at').annotate(minutes=Sum('length'))
 
         hours = []
-        for [date, minutes] in payment_values:
-            total_hours = 0
+        last_date = None
+        total_minutes = 0
+        for [started_at, minutes] in payment_values:
+            started_date = started_at.date()
+            if last_date != started_date:
+                if last_date:
+                    hours.append(_format_hours_worked_row(last_date, total_minutes))
+                total_minutes = 0
             if minutes:
-                total_hours = round(minutes / 60.0, 1)
-            hours.append([date.strftime(DATE_FORMAT), total_hours])
+                total_minutes += minutes
+            last_date = started_date
+        if total_minutes:
+            hours.append(_format_hours_worked_row(last_date, total_minutes))
 
         data = {
             'hours': hours,
@@ -71,9 +84,11 @@ def statistics(request):
     payments = codementor_models.Payment.objects.all()
     number_of_payments = payments.count()
     pending_total = payments.filter(payout__isnull=True).aggregate(Sum('earnings'))['earnings__sum']
-    sessions = payments.filter(type=codementor_models.PaymentType.SESSION)
+    session_payments = payments.filter(type=codementor_models.PaymentType.SESSION)
     offline_payments = payments.filter(type=codementor_models.PaymentType.OFFLINE_HELP)
     monthly_payments = payments.filter(type=codementor_models.PaymentType.MONTHLY)
+
+    sessions = codementor_models.Session.objects.all()
 
     graph_types = [
         ['payout_history', 'Payout History'],
@@ -92,12 +107,12 @@ def statistics(request):
         'lowest_payout': payouts_by_total_earnings[total_payouts - 1],
         'number_of_payments': number_of_payments,
         'number_of_sessions': sessions.count(),
-        'session_total': sessions.aggregate(Sum('earnings'))['earnings__sum'],
+        'session_total': session_payments.aggregate(Sum('earnings'))['earnings__sum'],
         'offline_payment_total': offline_payments.aggregate(Sum('earnings'))['earnings__sum'],
         'monthly_payment_total': monthly_payments.aggregate(Sum('earnings'))['earnings__sum'],
         'average_payment': payments.aggregate(Avg('earnings'))['earnings__avg'],
-        'average_session_length': int(round(payments.aggregate(Avg('length'))['length__avg'])),
-        'hours_worked': (payments.aggregate(Sum('length'))['length__sum'])/60,
+        'average_session_length': int(round(sessions.aggregate(Avg('length'))['length__avg'])),
+        'hours_worked': (sessions.aggregate(Sum('length'))['length__sum'])/60,
         'pending_total': pending_total,
         'graph_types': graph_types
     }
