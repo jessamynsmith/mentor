@@ -202,7 +202,6 @@ class Command(NoArgsCommand):
     def handle(self, *args, **options):
         delete = options.get('delete')
         if delete:
-            codementor_models.Client.objects.filter(payments__isnull=False).delete()
             codementor_models.Payment.objects.all().delete()
             codementor_models.Payout.objects.all().delete()
 

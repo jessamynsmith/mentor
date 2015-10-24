@@ -50,7 +50,6 @@ class Command(NoArgsCommand):
     def handle(self, *args, **options):
         delete = options.get('delete')
         if delete:
-            codementor_models.Client.objects.filter(reviews__isnull=False).delete()
             codementor_models.Review.objects.all().delete()
 
         process = CrawlerProcess({
