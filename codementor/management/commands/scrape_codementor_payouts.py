@@ -28,8 +28,8 @@ class PayoutSpider(Spider):
 
     def __init__(self, **kwargs):
         super(PayoutSpider, self).__init__()
-        self.username = os.environ.get('CODEMENTOR_USERNAME')
-        self.password = os.environ.get('CODEMENTOR_PASSWORD')
+        self.username = os.environ['CODEMENTOR_USERNAME']
+        self.password = os.environ['CODEMENTOR_PASSWORD']
 
     def parse(self, response):
         login_form = {
@@ -149,8 +149,6 @@ class PayoutSpider(Spider):
     def get_or_create_client(self, client_name, started_at):
         # NOTE! This will group payments by people with the same display name
         client, created = codementor_models.Client.objects.get_or_create(name=client_name)
-        if created:
-            client.save()
         if not client.started_at or started_at < client.started_at:
             client.started_at = started_at
             client.save()
@@ -176,19 +174,16 @@ class PayoutSpider(Spider):
         return review
 
     def get_or_create_payment(self, payment_div, payment_date, client_name, earnings_amount,
-                              length_or_type_text):
+                              length_or_type_text, payout=None):
         earnings = self.parse_amount(earnings_amount)
-        try:
-            payment = codementor_models.Payment.objects.get(
-                date=payment_date, client__name=client_name, earnings=earnings)
-        except codementor_models.Payment.DoesNotExist:
-            client = self.get_or_create_client(client_name, payment_date)
-            payment = codementor_models.Payment(date=payment_date,
-                                                client=client,
-                                                earnings=earnings)
-
-        payment.free_preview = self.has_free_preview(payment_div)
-        payment.type = self.parse_payment_type(length_or_type_text)
+        client = self.get_or_create_client(client_name, payment_date)
+        payment, created = codementor_models.Payment.objects.get_or_create(
+            date=payment_date, client=client, earnings=earnings)
+        if created:
+            payment.free_preview = self.has_free_preview(payment_div)
+            payment.type = self.parse_payment_type(length_or_type_text)
+            payment.payout = payout
+            payment.save()
         return payment
 
     def parse_payments(self, payout, payout_data):
@@ -208,9 +203,7 @@ class PayoutSpider(Spider):
                 earnings_amount = payment_info[4].strip()
 
             payment = self.get_or_create_payment(payment_div, payment_date, client_name,
-                                                 earnings_amount, length_or_type_text)
-            payment.payout = payout
-            payment.save()
+                                                 earnings_amount, length_or_type_text, payout)
             total_earnings += payment.earnings
 
         payout.total_earnings = total_earnings
