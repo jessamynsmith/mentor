@@ -7,9 +7,11 @@ from codementor import models
 
 
 class ClientAdmin(admin.ModelAdmin):
-    list_display = ['name', 'started_at', 'continent', 'gender', 'race_list']
-    list_filter = ['continent', 'gender', 'races__name', ('started_at', DateRangeFilter)]
-    search_fields = ['name']
+    list_display = ['name', 'started_at', 'continent', 'gender', 'race_list',
+                    'population_group_list']
+    list_filter = ['continent', 'gender', 'races__name', 'population_groups',
+                   ('started_at', DateRangeFilter)]
+    search_fields = ['name', 'population_groups__name']
 
 
 class ReviewAdmin(admin.ModelAdmin):
@@ -83,6 +85,7 @@ class SessionAdmin(admin.ModelAdmin):
 admin.site.register(models.Client, ClientAdmin)
 admin.site.register(models.Payment, PaymentAdmin)
 admin.site.register(models.Payout, PayoutAdmin)
+admin.site.register(models.PopulationGroup)
 admin.site.register(models.Race)
 admin.site.register(models.Review, ReviewAdmin)
 admin.site.register(models.Session, SessionAdmin)

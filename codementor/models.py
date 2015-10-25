@@ -2,6 +2,8 @@ from decimal import Decimal
 
 from django.db import models
 from django_enumfield import enum
+from enum import Enum
+from enumfields import EnumField
 
 
 class ContinentType(enum.Enum):
@@ -20,6 +22,52 @@ class GenderType(enum.Enum):
     TRANS_FEMALE = 2
     TRANS_MALE = 3
     AGENDER = 4
+
+
+class PopulationGroupType(Enum):
+    # From Canadian Census definitions http://www12.statcan.ca/census-recensement/2006/ref/
+    # rp-guides/visible_minority-minorites_visibles-eng.cfm
+    # For persons living in private households on Indian reserves, Indian settlements and in remote
+    # areas, data were collected using the 2006 Census Form 2D questionnaire.
+    # Response categories in the population group question included 11 mark-in circles and
+    # one write-in space. Respondents were asked 'Is this person:' and were instructed to mark more
+    # than one of the following response categories, or to specify another group, if applicable:
+    #     White
+    #     Chinese
+    #     South Asian (e.g., East Indian, Pakistani, Sri Lankan, etc.)
+    #     Black
+    #     Filipino
+    #     Latin American
+    #     Southeast Asian (e.g., Vietnamese, Cambodian, Malaysian, Laotian, etc.)
+    #     Arab
+    #     West Asian (e.g., Iranian, Afghan, etc.)
+    #     Korean
+    #     Japanese
+    #     Other -- Specify
+
+    INDIGENOUS = 'Indigenous'
+    WHITE = 'White'
+    CHINESE = 'Chinese'
+    SOUTH_ASIAN = 'South Asian'
+    BLACK = 'Black'
+    FILIPINO = 'Filipino'
+    LATIN_AMERICAN = 'Latin American'
+    SOUTHEAST_ASIAN = 'Southeast Asian'
+    ARAB = 'Arab'
+    WEST_ASIAN = 'West Asian'
+    KOREAN = 'Korean'
+    JAPANESE = 'Japanese'
+    OTHER = 'Other'
+
+
+class PopulationGroup(models.Model):
+    name = EnumField(PopulationGroupType, max_length=20)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name.value
 
 
 class RaceType(enum.Enum):
@@ -49,6 +97,7 @@ class Client(models.Model):
     continent = enum.EnumField(ContinentType, null=True, blank=True, default=None)
     gender = enum.EnumField(GenderType, null=True, blank=True, default=None)
     races = models.ManyToManyField(Race, blank=True, default=None)
+    population_groups = models.ManyToManyField(PopulationGroup, blank=True, default=None)
 
     class Meta:
         ordering = ['name']
@@ -59,6 +108,13 @@ class Client(models.Model):
         for race in self.races.values_list('name', flat=True):
             race_names.append(RaceType.get(race).label)
         return ', '.join(race_names)
+
+    @property
+    def population_group_list(self):
+        population_group_names = []
+        for population_group in self.population_groups.all():
+            population_group_names.append(population_group.name.value)
+        return ', '.join(population_group_names)
 
     def __str__(self):
         return self.name
