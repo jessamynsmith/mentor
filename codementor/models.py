@@ -29,6 +29,8 @@ class RaceType(enum.Enum):
     EAST_ASIAN = 3
     SOUTH_ASIAN = 4
     WHITE = 5
+    MIDDLE_EASTERN = 6
+    LATINO = 7
 
 
 class Race(models.Model):
