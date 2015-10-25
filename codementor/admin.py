@@ -1,3 +1,4 @@
+from daterange_filter.filter import DateRangeFilter
 from django.contrib import admin
 from django.contrib.admin.views.main import ChangeList
 from django.db.models import Avg, Sum
@@ -7,13 +8,13 @@ from codementor import models
 
 class ClientAdmin(admin.ModelAdmin):
     list_display = ['name', 'started_at', 'continent', 'gender', 'race_list']
-    list_filter = ['continent', 'gender', 'races__name', 'started_at']
+    list_filter = ['continent', 'gender', 'races__name', ('started_at', DateRangeFilter)]
     search_fields = ['name']
 
 
 class ReviewAdmin(admin.ModelAdmin):
     list_display = ['reviewer', 'date', 'content']
-    list_filter = ['date', 'reviewer']
+    list_filter = [('date', DateRangeFilter), 'reviewer']
     search_fields = ['reviewer__name', 'content']
 
 
@@ -56,7 +57,7 @@ class SumAverageChangeList(ChangeList):
 
 class PayoutAdmin(admin.ModelAdmin):
     list_display = ['date', 'method', 'amount', 'total_earnings']
-    list_filter = ['method', 'date']
+    list_filter = ['method', ('date', DateRangeFilter)]
 
     def get_changelist(self, request, **kwargs):
         """Override the default changelist"""
@@ -65,7 +66,7 @@ class PayoutAdmin(admin.ModelAdmin):
 
 class PaymentAdmin(admin.ModelAdmin):
     list_display = ['client', 'payout', 'date', 'type', 'free_preview', 'earnings']
-    list_filter = ['type', 'date', 'free_preview', 'payout']
+    list_filter = ['type', ('date', DateRangeFilter), 'free_preview', 'payout']
     search_fields = ['client__name']
 
     def get_changelist(self, request, **kwargs):
@@ -75,7 +76,7 @@ class PaymentAdmin(admin.ModelAdmin):
 
 class SessionAdmin(admin.ModelAdmin):
     list_display = ['client', 'started_at', 'length', 'review']
-    list_filter = ['started_at', 'client']
+    list_filter = [('started_at', DateRangeFilter), 'client']
     search_fields = ['client__name']
 
 
