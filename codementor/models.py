@@ -70,44 +70,15 @@ class PopulationGroup(models.Model):
         return self.name.value
 
 
-class RaceType(enum.Enum):
-    AMERICAN_NATIVE = 0
-    AUSTRALIAN_NATIVE = 1
-    BLACK = 2
-    EAST_ASIAN = 3
-    SOUTH_ASIAN = 4
-    WHITE = 5
-    MIDDLE_EASTERN = 6
-    LATINO = 7
-
-
-class Race(models.Model):
-    name = enum.EnumField(RaceType, default=RaceType.WHITE)
-
-    class Meta:
-        ordering = ['name']
-
-    def __str__(self):
-        return RaceType.get(self.name).label
-
-
 class Client(models.Model):
     name = models.CharField(max_length=100)
     started_at = models.DateTimeField(null=True, blank=True)
     continent = enum.EnumField(ContinentType, null=True, blank=True, default=None)
     gender = enum.EnumField(GenderType, null=True, blank=True, default=None)
-    races = models.ManyToManyField(Race, blank=True, default=None)
     population_groups = models.ManyToManyField(PopulationGroup, blank=True, default=None)
 
     class Meta:
         ordering = ['name']
-
-    @property
-    def race_list(self):
-        race_names = []
-        for race in self.races.values_list('name', flat=True):
-            race_names.append(RaceType.get(race).label)
-        return ', '.join(race_names)
 
     @property
     def population_group_list(self):
