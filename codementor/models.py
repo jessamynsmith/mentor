@@ -13,6 +13,7 @@ class Continent(Enum):
     EUROPE = 'Europe'
     NORTH_AMERICA = 'North America'
     SOUTH_AMERICA = 'South America'
+    UNKNOWN = 'Unknown'
 
 
 class Gender(Enum):
@@ -21,6 +22,7 @@ class Gender(Enum):
     CIS_MALE = 'Cis Male'
     TRANS_FEMALE = 'Trans Female'
     TRANS_MALE = 'Trans Male'
+    UNKNOWN = 'Unknown'
 
 
 class PopulationGroupType(Enum):
@@ -72,8 +74,8 @@ class PopulationGroup(models.Model):
 class Client(models.Model):
     name = models.CharField(max_length=100)
     started_at = models.DateTimeField(null=True, blank=True)
-    continent = EnumField(Continent, max_length=20, null=True, blank=True)
-    gender = EnumField(Gender, max_length=20, null=True, blank=True)
+    continent = EnumField(Continent, max_length=20, default=Continent.UNKNOWN)
+    gender = EnumField(Gender, max_length=20, default=Gender.UNKNOWN)
     population_groups = models.ManyToManyField(PopulationGroup, blank=True, default=None)
 
     class Meta:
