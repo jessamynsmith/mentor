@@ -24,6 +24,24 @@ class GenderType(enum.Enum):
     AGENDER = 4
 
 
+class Continent(Enum):
+    AFRICA = 'Africa'
+    ANTARCTICA = 'Antarctica'
+    ASIA = 'Asia'
+    AUSTRALIA = 'Australia'
+    EUROPE = 'Europe'
+    NORTH_AMERICA = 'North America'
+    SOUTH_AMERICA = 'South America'
+
+
+class Gender(Enum):
+    AGENDER = 'Agender'
+    CIS_FEMALE = 'Cis Female'
+    CIS_MALE = 'Cis Male'
+    TRANS_FEMALE = 'Trans Female'
+    TRANS_MALE = 'Trans Male'
+
+
 class PopulationGroupType(Enum):
     # From Canadian Census definitions http://www12.statcan.ca/census-recensement/2006/ref/
     # rp-guides/visible_minority-minorites_visibles-eng.cfm
@@ -74,7 +92,9 @@ class Client(models.Model):
     name = models.CharField(max_length=100)
     started_at = models.DateTimeField(null=True, blank=True)
     continent = enum.EnumField(ContinentType, null=True, blank=True, default=None)
+    continent2 = EnumField(Continent, max_length=20, null=True, blank=True)
     gender = enum.EnumField(GenderType, null=True, blank=True, default=None)
+    gender2 = EnumField(Gender, max_length=20, null=True, blank=True)
     population_groups = models.ManyToManyField(PopulationGroup, blank=True, default=None)
 
     class Meta:
@@ -111,9 +131,14 @@ class PayoutMethod(enum.Enum):
     }
 
 
+class PayoutMethod2(Enum):
+    PAYPAL = 'PayPal'
+
+
 class Payout(models.Model):
     date = models.DateTimeField()
     method = enum.EnumField(PayoutMethod, default=PayoutMethod.PAYPAL)
+    method2 = EnumField(PayoutMethod2, default=PayoutMethod2.PAYPAL)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     total_earnings = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0'))
 
@@ -149,10 +174,17 @@ class PaymentType(enum.Enum):
     }
 
 
+class PaymentType2(Enum):
+    SESSION = 'Session'
+    OFFLINE_HELP = 'Offline Help'
+    MONTHLY = 'Codementor Monthly'
+
+
 class Payment(models.Model):
     client = models.ForeignKey(Client, related_name='payments')
     payout = models.ForeignKey(Payout, null=True, blank=True, related_name='payments')
     type = enum.EnumField(PaymentType, default=PaymentType.SESSION)
+    type2 = EnumField(PaymentType2, max_length=30, default=PaymentType2.SESSION)
     date = models.DateTimeField()
     session = models.OneToOneField(Session, null=True, blank=True)
     free_preview = models.BooleanField(default=False)

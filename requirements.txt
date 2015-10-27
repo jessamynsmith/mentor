@@ -7,7 +7,7 @@ dj-static==0.0.6
 Django==1.8.4
 django-daterange-filter==1.2.0
 django-enumfield==1.2.1
-django-enumfields==0.7.4
+-e git://github.com/jessamynsmith/django-enumfields.git@b14eaf31e905a70c51c0cf5b7af357cf177df9fd#egg=django_enumfields-origin_django_admin_filter
 django-toolbelt==0.0.1
 enum34==1.0.4
 gunicorn==19.3.0

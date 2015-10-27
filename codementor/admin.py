@@ -7,10 +7,11 @@ from codementor import models
 
 
 class ClientAdmin(admin.ModelAdmin):
-    list_display = ['name', 'started_at', 'continent', 'gender', 'population_group_list']
-    list_filter = ['continent', 'gender', 'population_groups',
+    list_display = ['name', 'started_at', 'continent', 'continent2', 'gender', 'gender2',
+                    'population_group_list']
+    list_filter = ['continent', 'continent2', 'gender', 'gender2', 'population_groups',
                    ('started_at', DateRangeFilter)]
-    search_fields = ['name', 'population_groups__name']
+    search_fields = ['name', 'population_groups__name', 'continent2', 'gender2']
 
 
 class ReviewAdmin(admin.ModelAdmin):
@@ -57,8 +58,8 @@ class SumAverageChangeList(ChangeList):
 
 
 class PayoutAdmin(admin.ModelAdmin):
-    list_display = ['date', 'method', 'amount', 'total_earnings']
-    list_filter = ['method', ('date', DateRangeFilter)]
+    list_display = ['date', 'method', 'method2', 'amount', 'total_earnings']
+    list_filter = ['method', 'method2', ('date', DateRangeFilter)]
 
     def get_changelist(self, request, **kwargs):
         """Override the default changelist"""
@@ -66,8 +67,8 @@ class PayoutAdmin(admin.ModelAdmin):
 
 
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ['client', 'payout', 'date', 'type', 'free_preview', 'earnings']
-    list_filter = ['type', ('date', DateRangeFilter), 'free_preview', 'payout']
+    list_display = ['client', 'payout', 'date', 'type', 'type2', 'free_preview', 'earnings']
+    list_filter = ['type', 'type2', ('date', DateRangeFilter), 'free_preview', 'payout']
     search_fields = ['client__name']
 
     def get_changelist(self, request, **kwargs):
