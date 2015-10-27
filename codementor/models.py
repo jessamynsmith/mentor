@@ -72,8 +72,8 @@ class PopulationGroup(models.Model):
 class Client(models.Model):
     name = models.CharField(max_length=100)
     started_at = models.DateTimeField(null=True, blank=True)
-    continent2 = EnumField(Continent, max_length=20, null=True, blank=True)
-    gender2 = EnumField(Gender, max_length=20, null=True, blank=True)
+    continent = EnumField(Continent, max_length=20, null=True, blank=True)
+    gender = EnumField(Gender, max_length=20, null=True, blank=True)
     population_groups = models.ManyToManyField(PopulationGroup, blank=True, default=None)
 
     class Meta:
@@ -102,13 +102,13 @@ class Review(models.Model):
         return self.content
 
 
-class PayoutMethod2(Enum):
+class PayoutMethod(Enum):
     PAYPAL = 'PayPal'
 
 
 class Payout(models.Model):
     date = models.DateTimeField()
-    method2 = EnumField(PayoutMethod2, default=PayoutMethod2.PAYPAL)
+    method = EnumField(PayoutMethod, default=PayoutMethod.PAYPAL)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     total_earnings = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0'))
 
@@ -132,7 +132,7 @@ class Session(models.Model):
         return '%s (%s)' % (self.client, self.length)
 
 
-class PaymentType2(Enum):
+class PaymentType(Enum):
     SESSION = 'Session'
     OFFLINE_HELP = 'Offline Help'
     MONTHLY = 'Codementor Monthly'
@@ -141,7 +141,7 @@ class PaymentType2(Enum):
 class Payment(models.Model):
     client = models.ForeignKey(Client, related_name='payments')
     payout = models.ForeignKey(Payout, null=True, blank=True, related_name='payments')
-    type2 = EnumField(PaymentType2, max_length=30, default=PaymentType2.SESSION)
+    type = EnumField(PaymentType, max_length=30, default=PaymentType.SESSION)
     date = models.DateTimeField()
     session = models.OneToOneField(Session, null=True, blank=True)
     free_preview = models.BooleanField(default=False)

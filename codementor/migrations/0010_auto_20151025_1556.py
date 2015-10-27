@@ -84,49 +84,49 @@ def set_gender(apps, schema_editor):
         item.save()
 
 def set_payout_method2(apps, schema_editor):
-    from codementor.models import PayoutMethod2
+    from codementor.models import PayoutMethod
 
     Payout = apps.get_model("codementor", "Payout")
     for item in Payout.objects.all():
         if item.method == 0:
-            item.method2 = PayoutMethod2.PAYPAL
+            item.method2 = PayoutMethod.PAYPAL
         item.save()
 
 
 def set_payout_method(apps, schema_editor):
-    from codementor.models import PayoutMethod2
+    from codementor.models import PayoutMethod
 
     Payout = apps.get_model("codementor", "Payout")
     for item in Payout.objects.all():
-        if item.method2 == PayoutMethod2.PAYPAL:
+        if item.method2 == PayoutMethod.PAYPAL:
             item.method = 0
         item.save()
 
 
 def set_payment_type2(apps, schema_editor):
-    from codementor.models import PaymentType2
+    from codementor.models import PaymentType
 
     Payment = apps.get_model("codementor", "Payment")
     for item in Payment.objects.all():
         if item.type == 0:
-            item.type2 = PaymentType2.SESSION
+            item.type2 = PaymentType.SESSION
         elif item.type == 1:
-            item.type2 = PaymentType2.OFFLINE_HELP
+            item.type2 = PaymentType.OFFLINE_HELP
         elif item.type == 2:
-            item.type2 = PaymentType2.MONTHLY
+            item.type2 = PaymentType.MONTHLY
         item.save()
 
 
 def set_payment_type(apps, schema_editor):
-    from codementor.models import PaymentType2
+    from codementor.models import PaymentType
 
     Payment = apps.get_model("codementor", "Payment")
     for item in Payment.objects.all():
-        if item.type2 == PaymentType2.SESSION:
+        if item.type2 == PaymentType.SESSION:
             item.type = 0
-        elif item.type2 == PaymentType2.OFFLINE_HELP:
+        elif item.type2 == PaymentType.OFFLINE_HELP:
             item.type = 1
-        elif item.type2 == PaymentType2.MONTHLY:
+        elif item.type2 == PaymentType.MONTHLY:
             item.type = 2
         item.save()
 

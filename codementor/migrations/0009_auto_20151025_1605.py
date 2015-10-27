@@ -26,11 +26,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='payment',
             name='type2',
-            field=enumfields.fields.EnumField(default=b'Session', max_length=30, enum=codementor.models.PaymentType2),
+            field=enumfields.fields.EnumField(default=b'Session', max_length=30, enum=codementor.models.PaymentType),
         ),
         migrations.AddField(
             model_name='payout',
             name='method2',
-            field=enumfields.fields.EnumField(default=b'PayPal', max_length=10, enum=codementor.models.PayoutMethod2),
+            field=enumfields.fields.EnumField(default=b'PayPal', max_length=10, enum=codementor.models.PayoutMethod),
         ),
     ]

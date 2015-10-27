@@ -131,11 +131,11 @@ class PayoutSpider(Spider):
 
     def parse_payment_type(self, length_or_type_text):
         length_or_type_text = length_or_type_text.strip()
-        payment_type = codementor_models.PaymentType2.SESSION
+        payment_type = codementor_models.PaymentType.SESSION
         if length_or_type_text == "Offline Help":
-            payment_type = codementor_models.PaymentType2.OFFLINE_HELP
+            payment_type = codementor_models.PaymentType.OFFLINE_HELP
         elif length_or_type_text.find("Monthly") > 0:
-            payment_type = codementor_models.PaymentType2.MONTHLY
+            payment_type = codementor_models.PaymentType.MONTHLY
 
         return payment_type
 
@@ -181,7 +181,7 @@ class PayoutSpider(Spider):
             date=payment_date, client=client, earnings=earnings)
         if created:
             payment.free_preview = self.has_free_preview(payment_div)
-            payment.type2 = self.parse_payment_type(length_or_type_text)
+            payment.type = self.parse_payment_type(length_or_type_text)
             payment.payout = payout
             payment.save()
         return payment
@@ -245,13 +245,13 @@ class PayoutSpider(Spider):
                                                  'div/div[contains(@class, "info")]/text()')
             payout_info = payout_info_text.extract()
             payout_date = self.parse_date(payout_info[2])
-            payout_method = getattr(codementor_models.PayoutMethod2, payout_info[3].strip().upper())
+            payout_method = getattr(codementor_models.PayoutMethod, payout_info[3].strip().upper())
             payout_amount = self.parse_amount(payout_info[5])
 
             existing_payouts = codementor_models.Payout.objects.filter(date=payout_date)
             if existing_payouts.count() == 0:
                 payout = codementor_models.Payout(
-                    date=payout_date, method2=payout_method, amount=payout_amount)
+                    date=payout_date, method=payout_method, amount=payout_amount)
                 payout.save()
                 self.parse_payments(payout, payout_data)
 
