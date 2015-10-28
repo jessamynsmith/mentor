@@ -131,7 +131,7 @@ class Session(models.Model):
         ordering = ['-started_at']
 
     def __str__(self):
-        return '%s (%s)' % (self.client, self.length)
+        return '%s - %s (%s)' % (self.client, self.length, self.started_at)
 
 
 class PaymentType(Enum):
@@ -153,5 +153,4 @@ class Payment(models.Model):
         ordering = ['-date']
 
     def __str__(self):
-        return '%s (%s) - %s - %s' % (self.earnings, self.length,
-                                      self.date, self.client)
+        return '%s (%s) - %s' % (self.earnings, self.date, self.client)
