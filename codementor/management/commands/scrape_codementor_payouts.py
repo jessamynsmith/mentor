@@ -175,10 +175,9 @@ class PayoutSpider(Spider):
 
     def get_or_create_payment(self, payment_div, payment_date, client_name, earnings_amount,
                               length_or_type_text, payout=None):
-        earnings = self.parse_amount(earnings_amount)
         client = self.get_or_create_client(client_name, payment_date)
         payment, created = codementor_models.Payment.objects.get_or_create(
-            date=payment_date, client=client, earnings=earnings)
+            date=payment_date, client=client, earnings=earnings_amount)
         if created:
             payment.free_preview = self.has_free_preview(payment_div)
             payment.type = self.parse_payment_type(length_or_type_text)
@@ -201,6 +200,7 @@ class PayoutSpider(Spider):
             earnings_amount = payment_info[3].strip()
             if not earnings_amount:
                 earnings_amount = payment_info[4].strip()
+            earnings_amount = self.parse_amount(earnings_amount)
 
             payment = self.get_or_create_payment(payment_div, payment_date, client_name,
                                                  earnings_amount, length_or_type_text, payout)
@@ -231,6 +231,12 @@ class PayoutSpider(Spider):
                 # Sessions with 15min free have an extra div inserted, so earnings are offset by 1
                 if not earnings_amount:
                     earnings_amount = payment_info[4].strip()
+            earnings_amount = self.parse_amount(earnings_amount)
+            tips_div = payment_div.xpath('./*[@id="tips"]')
+            if tips_div:
+                tips = tips_div.xpath('./text()').extract()
+                tip_amount = self.parse_amount((tips[0].split(' ')[1]).split(')')[0])
+                earnings_amount += tip_amount
 
             payment = self.get_or_create_payment(payment_div, payment_date, client_name,
                                                  earnings_amount, length_or_type_text)
