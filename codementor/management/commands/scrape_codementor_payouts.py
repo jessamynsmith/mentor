@@ -259,7 +259,9 @@ class PayoutSpider(Spider):
                 payout = codementor_models.Payout(
                     date=payout_date, method=payout_method, amount=payout_amount)
                 payout.save()
-                self.parse_payments(payout, payout_data)
+            else:
+                payout = existing_payouts[0]
+            self.parse_payments(payout, payout_data)
 
 
 class Command(NoArgsCommand):
