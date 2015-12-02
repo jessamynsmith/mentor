@@ -157,7 +157,8 @@ class PayoutSpider(Spider):
     def get_or_create_review(self, client, review_date, content):
         # Can't use get_or_create here because dates show up slightly differently between the
         # sessions page and the reviews page.
-        reviews = codementor_models.Review.objects.filter(reviewer=client, content=content)
+        reviews = codementor_models.Review.objects.filter(reviewer=client, date=review_date,
+                                                          content=content)
         if reviews.count() > 0:
             review = reviews[0]
         else:
