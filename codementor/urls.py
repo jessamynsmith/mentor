@@ -5,7 +5,7 @@ from codementor import views as codementor_views
 
 
 urlpatterns = [
-    url(r'^$', RedirectView.as_view(url='statistics/', permanent=True)),
+    url(r'^$', RedirectView.as_view(url='admin/', permanent=True)),
     url(r'^statistics/$', codementor_views.statistics, name='statistics'),
     url(r'^statistics/payout_history$', codementor_views.payout_history),
     url(r'^statistics/payment_history$', codementor_views.payment_history),
