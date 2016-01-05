@@ -9,9 +9,12 @@ from scrapy.spiders import Spider
 from scrapy.crawler import CrawlerProcess
 
 from django.core.management.base import NoArgsCommand
+from django.db import IntegrityError
 
 from codementor import models as codementor_models
 
+
+# TODO dates should be stored in UTC
 
 class PayoutSpider(Spider):
     name = "payout"
@@ -64,7 +67,7 @@ class PayoutSpider(Spider):
         for review in reviews:
             review_info_text = review.xpath('./div[contains(@class, "reviewerName")]/span/text()')
             review_info = review_info_text.extract()
-            reviewer_name = review_info[0]
+            reviewer_name = review_info[0].strip()
             review_date = self.parse_date(review_info[1])
             review_content_text = review.xpath('./div[contains(@class, "content")]/div/text()')
             review_content = review_content_text.extract()[0].strip()
@@ -78,12 +81,15 @@ class PayoutSpider(Spider):
             callback=self.parse_sessions
         )
 
+    def clean_client_name(self, client_name):
+        return client_name.replace('Session with', '').replace('(refunded)', '').strip()
+
     def parse_sessions(self, response):
         sessions = response.xpath('//li[contains(@class, "question-header")]')
         for session in sessions:
             session_info = session.xpath('./div/div[contains(@class, "content")]')
             client_name_text = session_info.xpath('./h4/text()').extract()[0]
-            client_name = client_name_text.replace('Session with', '').strip()
+            client_name = self.clean_client_name(client_name_text)
 
             time_text = session_info.xpath('./p[contains(@class, "muted")]/text()').extract()[1]
             time_pieces = time_text.split('\n')
@@ -157,8 +163,7 @@ class PayoutSpider(Spider):
     def get_or_create_review(self, client, review_date, content):
         # Can't use get_or_create here because dates show up slightly differently between the
         # sessions page and the reviews page.
-        reviews = codementor_models.Review.objects.filter(reviewer=client, date=review_date,
-                                                          content=content)
+        reviews = codementor_models.Review.objects.filter(reviewer=client, content=content)
         if reviews.count() > 0:
             review = reviews[0]
         else:
@@ -171,7 +176,16 @@ class PayoutSpider(Spider):
             client=client, started_at=started_at, length=length)
         if created:
             session.review = review
-            session.save()
+            try:
+                session.save()
+            except IntegrityError as e:
+                # Occurs if there are two reviews with the same text -- if so, just make a new one
+                if str(e).find('Key (review_id)') > 0:
+                    review = codementor_models.Review(reviewer=client, date=session.started_at,
+                                                      content=review.content)
+                    review.save()
+                    session.review = review
+                    session.save()
         return review
 
     def get_or_create_payment(self, payment_div, payment_date, client_name, earnings_amount,
@@ -194,7 +208,7 @@ class PayoutSpider(Spider):
             payment_div = payment.xpath('./div/div[@class="info_padding"]')
             payment_info = payment_div.xpath('./text()').extract()
             payment_date = self.parse_date(payment_info[0])
-            client_name = payment_info[1].strip()
+            client_name = self.clean_client_name(payment_info[1])
             length_or_type_text = payment_info[2]
 
             # Sessions with 15min free have an extra div inserted, so earnings are offset by 1
@@ -219,7 +233,7 @@ class PayoutSpider(Spider):
             payment_date = self.parse_date(payment_info[0])
             if not payment_date:
                 continue
-            client_name = payment_info[1].strip()
+            client_name = self.clean_client_name(payment_info[1])
 
             if len(payment_info) < 4:
                 # For offline help payments, there is no length and amount is at index 2

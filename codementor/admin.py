@@ -68,7 +68,7 @@ class PayoutAdmin(admin.ModelAdmin):
 
 class PaymentAdmin(admin.ModelAdmin):
     list_display = ['client', 'payout', 'date', 'type', 'free_preview', 'earnings']
-    list_filter = ['type', ('date', DateRangeFilter), 'free_preview', 'payout']
+    list_filter = ['type', ('date', DateRangeFilter), 'free_preview', 'payout', 'client']
     search_fields = ['client__name']
 
     def get_changelist(self, request, **kwargs):
