@@ -1,13 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %}Statistics{% endblock %}
+{% load staticfiles %}
 
-{% block head %}
-  {% load staticfiles %}
-  <script type='text/javascript'
-          src='//cdnjs.cloudflare.com/ajax/libs/highstock/2.1.4/highstock.js'></script>
-  <script type='text/javascript' src="{% static 'codementor/js/statistics.js' %}"></script>
-{% endblock %}
+{% block title %}Statistics{% endblock %}
 
 {% block content %}
   <div>
@@ -109,4 +104,13 @@
     No payment history found.
   </div>
 
+{% endblock %}
+
+
+{% block javascript %}
+  <script type='text/javascript' src="{% static 'highstock/js/highstock.src.js' %}"></script>
+  <script type='text/javascript'>
+    var TIMEZONE = '{{ timezone }}'';
+  </script>
+  <script type='text/javascript' src="{% static 'codementor/js/statistics.js' %}"></script>
 {% endblock %}

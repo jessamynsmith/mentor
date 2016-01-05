@@ -103,5 +103,6 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 STATICFILES_DIRS = (
+    BASE_DIR + '/bower_components/',
     BASE_DIR + '/mentor/static/',
 )

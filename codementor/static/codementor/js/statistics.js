@@ -126,7 +126,10 @@ var updateView = function() {
 $(document).ready(function () {
     Highcharts.setOptions({
         global: {
-            useUTC: false
+            getTimezoneOffset: function (timestamp) {
+                var timezoneOffset = -moment.tz(timestamp, TIMEZONE).utcOffset();
+                return timezoneOffset;
+            }
         }
     });
 

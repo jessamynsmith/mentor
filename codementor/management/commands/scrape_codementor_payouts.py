@@ -14,8 +14,6 @@ from django.db import IntegrityError
 from codementor import models as codementor_models
 
 
-# TODO dates should be stored in UTC
-
 class PayoutSpider(Spider):
     name = "payout"
     allowed_domains = ["codementor.io"]
@@ -186,7 +184,7 @@ class PayoutSpider(Spider):
                     review.save()
                     session.review = review
                     session.save()
-        return review
+        return session
 
     def get_or_create_payment(self, payment_div, payment_date, client_name, earnings_amount,
                               length_or_type_text, payout=None):
@@ -253,9 +251,8 @@ class PayoutSpider(Spider):
                 tip_amount = self.parse_amount((tips[0].split(' ')[1]).split(')')[0])
                 earnings_amount += tip_amount
 
-            payment = self.get_or_create_payment(payment_div, payment_date, client_name,
-                                                 earnings_amount, length_or_type_text)
-            payment.save()
+            self.get_or_create_payment(payment_div, payment_date, client_name, earnings_amount,
+                                       length_or_type_text)
 
     def parse_payouts(self, response):
         self.parse_pending_payments(response)

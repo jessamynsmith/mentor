@@ -1,0 +1,27 @@
+{
+  "name": "mentor",
+  "homepage": "https://github.com/jessamynsmith/mentor",
+  "authors": [
+    "Jessamyn Smith <jessamyn.smith@gmail.com>"
+  ],
+  "description": "Data for mentoring business",
+  "main": "",
+  "moduleType": [],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "moment": "~2.11.0",
+    "jquery": "~2.1.4",
+    "bootstrap": "~3.3.6",
+    "jquery-ui": "jqueryui#~1.11.4",
+    "highstock": "~3.0.1",
+    "moment-timezone": "~0.5.0"
+  }
+}

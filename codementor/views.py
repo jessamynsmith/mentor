@@ -1,3 +1,6 @@
+import os
+import pytz
+
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.db.models import Avg, Sum
@@ -7,6 +10,7 @@ from codementor import models as codementor_models
 
 
 DATE_FORMAT = "%Y-%m-%d"
+TIMEZONE = pytz.timezone(os.environ.get('TIMEZONE'))
 
 
 @login_required
@@ -19,7 +23,7 @@ def payout_history(request):
         amounts = []
         earnings = []
         for [date, amount, earning] in payout_values:
-            date_str = date.strftime(DATE_FORMAT)
+            date_str = date.astimezone(TIMEZONE).strftime(DATE_FORMAT)
             amounts.append([date_str, float(amount)])
             earnings.append([date_str, float(earning)])
 
@@ -32,34 +36,36 @@ def payout_history(request):
 
 @login_required
 def payment_history(request):
+    # TODO this may not break up payments correctly by day due to timezone
     payments = codementor_models.Payment.objects.all().order_by('date')
     data = {}
     if payments:
         payment_values = payments.values_list('date').annotate(total_earnings=Sum('earnings'))
         data = {
-            'payments': [[d.strftime(DATE_FORMAT), float(t)] for [d, t] in payment_values],
+            'payments': [[d.astimezone(TIMEZONE).strftime(DATE_FORMAT), float(t)]
+                         for [d, t] in payment_values],
         }
     return JsonResponse(data)
 
 
 def _format_hours_worked_row(work_date, minutes):
     total_hours = round(minutes / 60.0, 1)
-    return [work_date.strftime(DATE_FORMAT), total_hours]
+    return [work_date.astimezone(TIMEZONE).strftime(DATE_FORMAT), total_hours]
 
 
 @login_required
 def hours_worked(request):
-    payments = codementor_models.Session.objects.all().order_by('started_at')
+    sessions = codementor_models.Session.objects.all().order_by('started_at')
     data = {}
-    if payments:
-        payment_values = payments.values_list('started_at').annotate(minutes=Sum('length'))
+    if sessions:
+        payment_values = sessions.values_list('started_at').annotate(minutes=Sum('length'))
 
         hours = []
         last_date = None
         total_minutes = 0
         for [started_at, minutes] in payment_values:
-            started_date = started_at.date()
-            if last_date != started_date:
+            started_date = started_at.astimezone(TIMEZONE)
+            if last_date and last_date.date() != started_date.date():
                 if last_date:
                     hours.append(_format_hours_worked_row(last_date, total_minutes))
                 total_minutes = 0
@@ -97,6 +103,7 @@ def statistics(request):
     ]
 
     context = {
+        'timezone': TIMEZONE,
         'total_payouts': total_payouts,
         'payout_total': payouts.aggregate(Sum('amount'))['amount__sum'],
         'earnings_total': payouts.aggregate(Sum('total_earnings'))['total_earnings__sum'],
