@@ -36,11 +36,11 @@ def payout_history(request):
 
 @login_required
 def payment_history(request):
-    # TODO this may not break up payments correctly by day due to timezone
     payments = codementor_models.Payment.objects.all().order_by('date')
     data = {}
     if payments:
         payment_values = payments.values_list('date').annotate(total_earnings=Sum('earnings'))
+        # Payments don't have a specific time, so we converting to timezone after grouping works
         data = {
             'payments': [[d.astimezone(TIMEZONE).strftime(DATE_FORMAT), float(t)]
                          for [d, t] in payment_values],
