@@ -14,6 +14,9 @@ from django.db import IntegrityError
 from codementor import models as codementor_models
 
 
+# TODO get client timezone, username, other fields?
+
+
 class PayoutSpider(Spider):
     name = "payout"
     allowed_domains = ["codementor.io"]
@@ -248,8 +251,10 @@ class PayoutSpider(Spider):
             tips_div = payment_div.xpath('./*[@id="tips"]')
             if tips_div:
                 tips = tips_div.xpath('./text()').extract()
-                tip_amount = self.parse_amount((tips[0].split(' ')[1]).split(')')[0])
-                earnings_amount += tip_amount
+                tip_text = tips[0].split(' ')[1]
+                if tip_text != 'review':
+                    tip_amount = self.parse_amount(tip_text.split(')')[0])
+                    earnings_amount += tip_amount
 
             self.get_or_create_payment(payment_div, payment_date, client_name, earnings_amount,
                                        length_or_type_text)
