@@ -102,6 +102,49 @@ var hours_worked = function(data) {
     });
 };
 
+var session_lengths = function(data) {
+    $('#id_session_lengths').highcharts({
+        chart: {
+            type: 'column'
+        },
+        title: {
+            text: 'Session Lengths'
+        },
+        xAxis: {
+            title: {
+                text: 'Session Duration (min)'
+            },
+            labels: {
+                rotation: 45,
+                y: 30,
+                formatter: function() {
+                    return this.value + '-' + (parseInt(this.value) + 15);
+                }
+            },
+            tickInterval: 15
+        },
+        yAxis: {
+            title: {
+                text: 'Nunber of Sessions'
+            }
+        },
+        plotOptions: {
+            column: {
+                pointPadding: 0,
+                borderWidth: 0,
+                groupPadding: 0,
+                shadow: false
+            }
+        },
+        series: [{
+            name: 'Session Count',
+            color: '#0f76ed',
+            data: data.sessions
+        }
+        ]
+    });
+};
+
 var updateView = function() {
     $('.statistics').hide();
     var viewType = $('#id_select_statistics').val();

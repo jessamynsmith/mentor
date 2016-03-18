@@ -10,4 +10,5 @@ urlpatterns = [
     url(r'^statistics/payout_history$', codementor_views.payout_history),
     url(r'^statistics/payment_history$', codementor_views.payment_history),
     url(r'^statistics/hours_worked', codementor_views.hours_worked),
+    url(r'^statistics/session_lengths', codementor_views.session_lengths),
 ]

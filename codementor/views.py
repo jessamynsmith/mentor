@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import os
 import pytz
 
@@ -82,6 +83,39 @@ def hours_worked(request):
 
 
 @login_required
+def session_lengths(request):
+    sessions = codementor_models.Session.objects.all().order_by('length')
+    data = {}
+    if sessions:
+        # Bucket by 15 minute increments
+        bucket_size = 15
+
+        buckets = OrderedDict()
+
+        bucket_min = 0
+        bucket_max = 15
+        session_count = 0
+        for session in sessions:
+            if session.length > bucket_max:
+                buckets[bucket_min] = session_count
+                session_count = 0
+                bucket_min += bucket_size
+                bucket_max += bucket_size
+            else:
+                session_count += 1
+
+        sessions = []
+        for key, value in buckets.iteritems():
+            # sessions.append(['%s-%s' % (key, key+bucket_size), value])
+            sessions.append([key, value])
+
+        data = {
+            'sessions': sessions,
+        }
+    return JsonResponse(data)
+
+
+@login_required
 def statistics(request):
     payouts = codementor_models.Payout.objects.all()
     total_payouts = payouts.count()
@@ -99,7 +133,8 @@ def statistics(request):
     graph_types = [
         ['payout_history', 'Payout History'],
         ['payment_history', 'Payment History'],
-        ['hours_worked', 'Hours Worked']
+        ['hours_worked', 'Hours Worked'],
+        ['session_lengths', 'Session Lengths'],
     ]
 
     context = {
@@ -120,6 +155,7 @@ def statistics(request):
         'average_payment': payments.aggregate(Avg('earnings'))['earnings__avg'],
         'average_session_length': int(round(sessions.aggregate(Avg('length'))['length__avg'])),
         'hours_worked': (sessions.aggregate(Sum('length'))['length__sum'])/60,
+        'sessions_per_client': (sessions.count()/codementor_models.Client.objects.count()),
         'pending_total': pending_total,
         'graph_types': graph_types
     }

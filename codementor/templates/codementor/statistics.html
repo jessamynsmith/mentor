@@ -90,6 +90,10 @@
         <td>{{ average_session_length }}</td>
       </tr>
       <tr>
+        <td>Average Sessions per Client:</td>
+        <td>{{ sessions_per_client }}</td>
+      </tr>
+      <tr>
         <td>Hours Worked:</td>
         <td>{{ hours_worked }}</td>
       </tr>
@@ -110,7 +114,7 @@
 {% block javascript %}
   <script type='text/javascript' src="{% static 'highstock/js/highstock.src.js' %}"></script>
   <script type='text/javascript'>
-    var TIMEZONE = '{{ timezone }}'';
+    var TIMEZONE = '{{ timezone }}';
   </script>
   <script type='text/javascript' src="{% static 'codementor/js/statistics.js' %}"></script>
 {% endblock %}
