@@ -1,6 +1,7 @@
 import datetime
 import dateutil.parser
 from decimal import Decimal
+import json
 from optparse import make_option
 import os
 import pytz
@@ -10,6 +11,7 @@ from scrapy.crawler import CrawlerProcess
 
 from django.core.management.base import NoArgsCommand
 from django.db import IntegrityError
+from django.db.models import Q
 
 from codementor import models as codementor_models
 
@@ -98,7 +100,13 @@ class PayoutSpider(Spider):
             session_length = self.parse_length(time_pieces[4].replace('Length:', ''))
             started_at = finished_at - datetime.timedelta(minutes=session_length)
 
-            client = self.get_or_create_client(client_name, started_at)
+            confirm_links = session.xpath('./div[contains(@class, "confirm")]/div/div/a')
+            chat_click = confirm_links[2].xpath('./@ng-click').extract()[0]
+            chat_data = chat_click[chat_click.find('(')+1:chat_click.find(')')]
+            chat_data = json.loads(chat_data.replace("'", '"'))
+            username = chat_data['contact']['username']
+
+            client = self.get_or_create_client(client_name, started_at, username)
 
             review = None
 
@@ -153,12 +161,21 @@ class PayoutSpider(Spider):
             free_preview = True
         return free_preview
 
-    def get_or_create_client(self, client_name, started_at):
-        # NOTE! This will group payments by people with the same display name
-        client, created = codementor_models.Client.objects.get_or_create(name=client_name)
+    def get_or_create_client(self, client_name, started_at, username=None):
+        clients = codementor_models.Client.objects.filter(name=client_name)
+        if username:
+            clients = clients.filter(Q(username=username) | Q(username__isnull=True))
+        if clients.count() > 0:
+            # TODO how to figure out which client is correct if there is more than one?
+            client = clients[0]
+        else:
+            client = codementor_models.Client(name=client_name, username=username)
+
+        if not client.username:
+            client.username = username
         if not client.started_at or started_at < client.started_at:
             client.started_at = started_at
-            client.save()
+        client.save()
         return client
 
     def get_or_create_review(self, client, review_date, content):

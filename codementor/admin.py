@@ -7,7 +7,8 @@ from codementor import models
 
 
 class ClientAdmin(admin.ModelAdmin):
-    list_display = ['name', 'started_at', 'continent', 'gender',
+    fields = ['name', 'username', 'started_at', 'continent', 'gender', 'population_groups']
+    list_display = ['name', 'username', 'started_at', 'continent', 'gender',
                     'population_group_list']
     list_filter = ['continent', 'gender', 'population_groups',
                    ('started_at', DateRangeFilter)]

@@ -73,6 +73,8 @@ class PopulationGroup(models.Model):
 
 class Client(models.Model):
     name = models.CharField(max_length=100)
+    username = models.CharField(max_length=100, blank=True, null=True)
+    # Add client timezone and other info from client page?
     started_at = models.DateTimeField(null=True, blank=True)
     continent = EnumField(Continent, max_length=20, default=Continent.UNKNOWN)
     gender = EnumField(Gender, max_length=20, default=Gender.UNKNOWN)
