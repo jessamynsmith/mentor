@@ -130,6 +130,8 @@ def statistics(request):
 
     sessions = codementor_models.Session.objects.all()
 
+    total_hours_worked = (sessions.aggregate(Sum('length'))['length__sum'])/60,
+
     graph_types = [
         ['payout_history', 'Payout History'],
         ['payment_history', 'Payment History'],
@@ -153,8 +155,9 @@ def statistics(request):
         'offline_payment_total': offline_payments.aggregate(Sum('earnings'))['earnings__sum'],
         'monthly_payment_total': monthly_payments.aggregate(Sum('earnings'))['earnings__sum'],
         'average_payment': payments.aggregate(Avg('earnings'))['earnings__avg'],
+        'total_session_length': int(round((sessions.aggregate(Sum('length'))['length__sum']) / 60)),
         'average_session_length': int(round(sessions.aggregate(Avg('length'))['length__avg'])),
-        'hours_worked': (sessions.aggregate(Sum('length'))['length__sum'])/60,
+        'hours_worked': total_hours_worked,
         'sessions_per_client': (sessions.count()/codementor_models.Client.objects.count()),
         'pending_total': pending_total,
         'graph_types': graph_types

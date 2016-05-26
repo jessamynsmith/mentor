@@ -81,6 +81,10 @@ class SessionAdmin(admin.ModelAdmin):
     list_filter = [('started_at', DateRangeFilter), 'client']
     search_fields = ['client__name']
 
+    def get_changelist(self, request, **kwargs):
+        """Override the default changelist"""
+        return SumAverageChangeList
+
 
 admin.site.register(models.Client, ClientAdmin)
 admin.site.register(models.Payment, PaymentAdmin)
