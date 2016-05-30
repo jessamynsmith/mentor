@@ -92,8 +92,9 @@ class Client(models.Model):
         return ', '.join(population_group_names)
 
     def user_external_link(self):
-        return '<a href="%s%s" target="_blank">%s</a>' % (settings.SOURCE_URL, self.username,
-                                                          self.username)
+        return ('<a href="%s%s" target="_blank">%s</a>'
+                % (settings.SOURCE_URL, self.username, self.username))
+
     user_external_link.allow_tags = True
 
     def __str__(self):
@@ -130,6 +131,7 @@ class Payout(models.Model):
 
 
 class Session(models.Model):
+    session_id = models.CharField(max_length=12)
     client = models.ForeignKey(Client, related_name='sessions')
     started_at = models.DateTimeField()
     length = models.IntegerField(null=True, blank=True)  # in minutes
@@ -137,6 +139,12 @@ class Session(models.Model):
 
     class Meta:
         ordering = ['-started_at']
+
+    def session_external_link(self):
+        return ('<a href="%s#/finished-sessions/%s" target="_blank">%s</a>'
+                % (settings.SOURCE_URL, self.session_id, self.session_id))
+
+    session_external_link.allow_tags = True
 
     def __str__(self):
         return '%s - %s (%s)' % (self.client, self.length, self.started_at)

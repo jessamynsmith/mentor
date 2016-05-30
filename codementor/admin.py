@@ -21,7 +21,7 @@ class ClientAdmin(admin.ModelAdmin):
     search_fields = ['name', 'username', 'population_groups__name', 'continent', 'gender']
 
     def user_external_link(self, instance):
-        return mark_safe(instance.user_external_link())
+        return mark_safe(instance.session_external_link())
 
 
 class ReviewAdmin(admin.ModelAdmin):
@@ -87,9 +87,17 @@ class PaymentAdmin(admin.ModelAdmin):
 
 
 class SessionAdmin(admin.ModelAdmin):
-    list_display = ['client', 'started_at', 'length', 'review']
+    fieldsets = (
+        (None, {'fields': ['client', 'session_external_link', 'started_at', 'length', 'review']}
+         ),
+    )
+    readonly_fields = ['session_external_link']
+    list_display = ['client', 'session_external_link', 'started_at', 'length', 'review']
     list_filter = [('started_at', DateRangeFilter), 'client']
-    search_fields = ['client__name']
+    search_fields = ['client__name', 'session_id']
+
+    def session_external_link(self, instance):
+        return mark_safe(instance.session_external_link())
 
     def get_changelist(self, request, **kwargs):
         """Override the default changelist"""

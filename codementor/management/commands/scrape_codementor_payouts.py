@@ -91,6 +91,7 @@ class PayoutSpider(Spider):
     def parse_sessions(self, response):
         sessions = response.xpath('//li[contains(@class, "question-header")]')
         for session in sessions:
+            session_id = session.xpath('./@question-panel').extract()[0]
             session_info = session.xpath('./div/div[contains(@class, "content")]')
             client_name_text = session_info.xpath('./h4/text()').extract()[0]
             client_name = self.clean_client_name(client_name_text)
@@ -117,7 +118,7 @@ class PayoutSpider(Spider):
                 review_content = review_div.xpath('./text()').extract()[0].strip()
                 review = self.get_or_create_review(client, finished_at, review_content)
 
-            self.get_or_create_session(client, started_at, session_length, review)
+            self.get_or_create_session(client, session_id, started_at, session_length, review)
 
         return Request(
             "https://www.codementor.io/users/payout_history",
@@ -190,9 +191,9 @@ class PayoutSpider(Spider):
             review.save()
         return review
 
-    def get_or_create_session(self, client, started_at, length, review):
+    def get_or_create_session(self, client, session_id, started_at, length, review):
         session, created = codementor_models.Session.objects.get_or_create(
-            client=client, started_at=started_at, length=length)
+            client=client, session_id=session_id, started_at=started_at, length=length)
         if created:
             session.review = review
             try:
