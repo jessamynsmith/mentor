@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
+from django.template.defaultfilters import truncatechars
 from django.db import models
 from enum import Enum
 from enumfields import EnumField
@@ -110,8 +111,16 @@ class Review(models.Model):
     class Meta:
         ordering = ['-date']
 
+    def session_link(self):
+        if not self.session:
+            return ''
+        return ('<a href="%s" target="_blank">Session</a>'
+                % (reverse('admin:codementor_session_change', args=(self.session.pk,))))
+
+    session_link.allow_tags = True
+
     def __str__(self):
-        return self.content
+        return truncatechars(self.content, 30)
 
 
 class PayoutMethod(Enum):
@@ -152,6 +161,14 @@ class Session(models.Model):
                 % (settings.SOURCE_URL, self.session_id, self.session_id))
 
     session_external_link.allow_tags = True
+
+    def review_link(self):
+        if not self.review:
+            return ''
+        return ('<a href="%s" target="_blank">Review</a>'
+                % (reverse('admin:codementor_review_change', args=(self.review.pk,))))
+
+    review_link.allow_tags = True
 
     def __str__(self):
         return '%s - %s (%s)' % (self.client, self.length, self.started_at)

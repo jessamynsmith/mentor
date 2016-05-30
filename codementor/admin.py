@@ -62,7 +62,12 @@ class ClientAdmin(admin.ModelAdmin):
 
 
 class ReviewAdmin(admin.ModelAdmin):
-    list_display = ['reviewer', 'date', 'content']
+    fieldsets = (
+        (None, {'fields': ['reviewer', 'date', 'session_link', 'content']}
+         ),
+    )
+    readonly_fields = ['session_link']
+    list_display = ['reviewer', 'session', 'date', 'content']
     list_filter = [('date', DateRangeFilter), 'reviewer']
     search_fields = ['reviewer__name', 'content']
 
@@ -103,10 +108,11 @@ class PaymentAdmin(admin.ModelAdmin):
 
 class SessionAdmin(admin.ModelAdmin):
     fieldsets = (
-        (None, {'fields': ['client', 'session_external_link', 'started_at', 'length', 'review']}
+        (None, {'fields': ['client', 'session_external_link', 'started_at', 'length', 'review',
+                           'review_link']}
          ),
     )
-    readonly_fields = ['session_external_link']
+    readonly_fields = ['session_external_link', 'review_link']
     list_display = ['client', 'session_external_link', 'started_at', 'length', 'review']
     list_filter = [('started_at', DateRangeFilter), 'client']
     search_fields = ['client__name', 'session_id']
