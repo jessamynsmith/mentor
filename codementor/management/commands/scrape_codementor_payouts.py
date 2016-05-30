@@ -217,6 +217,18 @@ class PayoutSpider(Spider):
             payment.free_preview = self.has_free_preview(payment_div)
             payment.type = self.parse_payment_type(length_or_type_text)
             payment.payout = payout
+            end_date = payment.date + datetime.timedelta(days=1)
+            sessions = codementor_models.Session.objects.filter(
+                client=client, payment__isnull=True, started_at__gte=payment.date,
+                started_at__lte=end_date)
+            if payment.type == codementor_models.PaymentType.SESSION:
+                length = self.parse_length(length_or_type_text.strip())
+                sessions = sessions.filter(length=length)
+            if sessions.count() > 0:
+                payment.session = sessions[0]
+            else:
+                # TODO figure out why sometimes no session is found
+                print('No sessions found')
             payment.save()
         return payment
 

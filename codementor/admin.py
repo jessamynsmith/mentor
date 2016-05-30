@@ -89,9 +89,12 @@ class PaymentAdmin(admin.ModelAdmin):
          ),
     )
     readonly_fields = ['payout_link', 'session_link']
-    list_display = ['client', 'payout', 'date', 'type', 'free_preview', 'earnings']
+    list_display = ['client', 'session_link', 'payout', 'date', 'type', 'free_preview', 'earnings']
     list_filter = ['type', ('date', DateRangeFilter), 'free_preview', 'payout', 'client']
     search_fields = ['client__name']
+
+    def session_link(self, instance):
+        return mark_safe(instance.session_link())
 
     def get_changelist(self, request, **kwargs):
         """Override the default changelist"""
