@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.conf import settings
 from django.db import models
 from enum import Enum
 from enumfields import EnumField
@@ -89,6 +90,11 @@ class Client(models.Model):
         for population_group in self.population_groups.all():
             population_group_names.append(population_group.name.value)
         return ', '.join(population_group_names)
+
+    def user_external_link(self):
+        return '<a href="%s%s" target="_blank">%s</a>' % (settings.SOURCE_URL, self.username,
+                                                          self.username)
+    user_external_link.allow_tags = True
 
     def __str__(self):
         return self.name

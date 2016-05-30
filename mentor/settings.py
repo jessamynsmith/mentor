@@ -106,3 +106,6 @@ STATICFILES_DIRS = (
     BASE_DIR + '/bower_components/',
     BASE_DIR + '/mentor/static/',
 )
+
+SOURCE_DOMAIN = 'codementor.io'
+SOURCE_URL = 'https://www.%s/' % SOURCE_DOMAIN

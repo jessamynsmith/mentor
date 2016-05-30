@@ -9,6 +9,7 @@ from scrapy import FormRequest, Request
 from scrapy.spiders import Spider
 from scrapy.crawler import CrawlerProcess
 
+from django.conf import settings
 from django.core.management.base import NoArgsCommand
 from django.db import IntegrityError
 from django.db.models import Q
@@ -16,14 +17,14 @@ from django.db.models import Q
 from codementor import models as codementor_models
 
 
-# TODO get client timezone, username, other fields?
+# TODO get client timezone, other fields?
 
 
 class PayoutSpider(Spider):
     name = "payout"
-    allowed_domains = ["codementor.io"]
+    allowed_domains = [settings.SOURCE_DOMAIN]
     start_urls = [
-        "https://www.codementor.io/users/sign_in"
+        "%susers/sign_in" % settings.SOURCE_URL
     ]
     known_timezones = {
         'Pacific Time': 'US/Pacific',

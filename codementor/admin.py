@@ -2,17 +2,26 @@ from daterange_filter.filter import DateRangeFilter
 from django.contrib import admin
 from django.contrib.admin.views.main import ChangeList
 from django.db.models import Avg, Sum
+from django.utils.safestring import mark_safe
 
 from codementor import models
 
 
 class ClientAdmin(admin.ModelAdmin):
-    fields = ['name', 'username', 'started_at', 'continent', 'gender', 'population_groups']
-    list_display = ['name', 'username', 'started_at', 'continent', 'gender',
+    fieldsets = (
+        (None, {'fields': ['name', 'user_external_link', 'started_at', 'continent', 'gender',
+                           'population_groups']}
+         ),
+    )
+    readonly_fields = ['user_external_link']
+    list_display = ['name', 'user_external_link', 'started_at', 'continent', 'gender',
                     'population_group_list']
     list_filter = ['continent', 'gender', 'population_groups',
                    ('started_at', DateRangeFilter)]
-    search_fields = ['name', 'population_groups__name', 'continent', 'gender']
+    search_fields = ['name', 'username', 'population_groups__name', 'continent', 'gender']
+
+    def user_external_link(self, instance):
+        return mark_safe(instance.user_external_link())
 
 
 class ReviewAdmin(admin.ModelAdmin):
