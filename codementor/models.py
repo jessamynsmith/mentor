@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django.conf import settings
+from django.core.urlresolvers import reverse
 from django.db import models
 from enum import Enum
 from enumfields import EnumField
@@ -126,6 +127,12 @@ class Payout(models.Model):
     class Meta:
         ordering = ['-date']
 
+    def payments_link(self):
+        return ('<a href="%s?payout__id__exact=%s" target="_blank">Payments</a>'
+                % (reverse('admin:codementor_payment_changelist'), self.pk))
+
+    payments_link.allow_tags = True
+
     def __str__(self):
         return '%s (%s)' % (self.amount, self.date.date())
 
@@ -167,6 +174,20 @@ class Payment(models.Model):
 
     class Meta:
         ordering = ['-date']
+
+    def payout_link(self):
+        return ('<a href="%s" target="_blank">Payout</a>'
+                % (reverse('admin:codementor_payout_change', args=(self.payout.pk,))))
+
+    payout_link.allow_tags = True
+
+    def session_link(self):
+        if not self.session_id:
+            return ''
+        return ('<a href="%s" target="_blank">Session</a>'
+                % (reverse('admin:codementor_session_change', args=(self.session.pk,))))
+
+    session_link.allow_tags = True
 
     def __str__(self):
         return '%s (%s) - %s' % (self.earnings, self.date, self.client)

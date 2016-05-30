@@ -68,6 +68,12 @@ class ReviewAdmin(admin.ModelAdmin):
 
 
 class PayoutAdmin(admin.ModelAdmin):
+    fieldsets = (
+        (None, {'fields': ['date', 'method', 'amount', 'total_earnings',
+                           'payments_link']}
+         ),
+    )
+    readonly_fields = ['payments_link']
     list_display = ['date', 'method', 'amount', 'total_earnings']
     list_filter = ['method', ('date', DateRangeFilter)]
 
@@ -77,6 +83,12 @@ class PayoutAdmin(admin.ModelAdmin):
 
 
 class PaymentAdmin(admin.ModelAdmin):
+    fieldsets = (
+        (None, {'fields': ['client', 'earnings', 'free_preview', 'date', 'type',
+                           'payout', 'payout_link', 'session', 'session_link']}
+         ),
+    )
+    readonly_fields = ['payout_link', 'session_link']
     list_display = ['client', 'payout', 'date', 'type', 'free_preview', 'earnings']
     list_filter = ['type', ('date', DateRangeFilter), 'free_preview', 'payout', 'client']
     search_fields = ['client__name']
