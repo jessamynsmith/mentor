@@ -239,7 +239,7 @@ class PayoutSpider(Spider):
                                                  earnings_amount, length_or_type_text, payout)
             total_earnings += payment.earnings
 
-        payout.total_earnings = total_earnings
+        payout.total_earnings += total_earnings
         payout.save()
 
     def parse_pending_payments(self, response):
@@ -295,6 +295,7 @@ class PayoutSpider(Spider):
                 payout.save()
             else:
                 payout = existing_payouts[0]
+                payout.amount += payout_amount
             self.parse_payments(payout, payout_data)
 
 
