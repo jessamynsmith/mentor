@@ -7,29 +7,6 @@ from django.utils.safestring import mark_safe
 from codementor import models
 
 
-class ClientAdmin(admin.ModelAdmin):
-    fieldsets = (
-        (None, {'fields': ['name', 'user_external_link', 'started_at', 'continent', 'gender',
-                           'population_groups']}
-         ),
-    )
-    readonly_fields = ['user_external_link']
-    list_display = ['name', 'user_external_link', 'started_at', 'continent', 'gender',
-                    'population_group_list']
-    list_filter = ['continent', 'gender', 'population_groups',
-                   ('started_at', DateRangeFilter)]
-    search_fields = ['name', 'username', 'population_groups__name', 'continent', 'gender']
-
-    def user_external_link(self, instance):
-        return mark_safe(instance.session_external_link())
-
-
-class ReviewAdmin(admin.ModelAdmin):
-    list_display = ['reviewer', 'date', 'content']
-    list_filter = [('date', DateRangeFilter), 'reviewer']
-    search_fields = ['reviewer__name', 'content']
-
-
 class SumAverageChangeList(ChangeList):
     """Custom total rows at bottom of changelist"""
 
@@ -65,6 +42,29 @@ class SumAverageChangeList(ChangeList):
         len(self.result_list)
         self.result_list._result_cache.append(total)
         self.result_list._result_cache.append(average)
+
+
+class ClientAdmin(admin.ModelAdmin):
+    fieldsets = (
+        (None, {'fields': ['name', 'user_external_link', 'started_at', 'continent', 'gender',
+                           'population_groups']}
+         ),
+    )
+    readonly_fields = ['user_external_link']
+    list_display = ['name', 'user_external_link', 'started_at', 'continent', 'gender',
+                    'population_group_list']
+    list_filter = ['continent', 'gender', 'population_groups',
+                   ('started_at', DateRangeFilter)]
+    search_fields = ['name', 'username', 'population_groups__name', 'continent', 'gender']
+
+    def user_external_link(self, instance):
+        return mark_safe(instance.session_external_link())
+
+
+class ReviewAdmin(admin.ModelAdmin):
+    list_display = ['reviewer', 'date', 'content']
+    list_filter = [('date', DateRangeFilter), 'reviewer']
+    search_fields = ['reviewer__name', 'content']
 
 
 class PayoutAdmin(admin.ModelAdmin):
