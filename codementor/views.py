@@ -1,7 +1,7 @@
 from collections import OrderedDict
-import os
 import pytz
 
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.db.models import Avg, Sum
@@ -11,7 +11,7 @@ from codementor import models as codementor_models
 
 
 DATE_FORMAT = "%Y-%m-%d"
-TIMEZONE = pytz.timezone(os.environ.get('TIMEZONE'))
+TIMEZONE = pytz.timezone(settings.LOCAL_TIME_ZONE)
 
 
 @login_required
