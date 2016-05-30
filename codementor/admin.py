@@ -58,7 +58,7 @@ class ClientAdmin(admin.ModelAdmin):
     search_fields = ['name', 'username', 'population_groups__name', 'continent', 'gender']
 
     def user_external_link(self, instance):
-        return mark_safe(instance.session_external_link())
+        return mark_safe(instance.user_external_link())
 
 
 class ReviewAdmin(admin.ModelAdmin):
