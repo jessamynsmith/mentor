@@ -163,10 +163,13 @@ class PayoutSpider(Spider):
             free_preview = True
         return free_preview
 
-    def get_or_create_client(self, client_name, started_at, username=None):
+    def get_or_create_client(self, client_name, started_at, username=None, session=None):
         clients = codementor_models.Client.objects.filter(name=client_name)
         if username:
             clients = clients.filter(Q(username=username) | Q(username__isnull=True))
+        if session:
+            clients = clients.filter(sessions=session)
+
         if clients.count() > 0:
             # TODO how to figure out which client is correct if there is more than one?
             client = clients[0]
@@ -208,27 +211,38 @@ class PayoutSpider(Spider):
                     session.save()
         return session
 
+    def find_session(self, client_name, payment_date, payment_type, length_or_type_text):
+        session = None
+
+        end_date = payment_date + datetime.timedelta(days=1)
+        sessions = codementor_models.Session.objects.filter(
+            client__name=client_name, payment__isnull=True, started_at__gte=payment_date,
+            started_at__lte=end_date)
+        if payment_type == codementor_models.PaymentType.SESSION:
+            length = self.parse_length(length_or_type_text.strip())
+            sessions = sessions.filter(length=length)
+
+        if sessions.count() > 0:
+            session = sessions[0]
+        else:
+            # TODO figure out why sometimes no session is found
+            print('No sessions found')
+        return session
+
     def get_or_create_payment(self, payment_div, payment_date, client_name, earnings_amount,
                               length_or_type_text, payout=None):
-        client = self.get_or_create_client(client_name, payment_date)
+        payment_type = self.parse_payment_type(length_or_type_text)
+
+        session = self.find_session(client_name, payment_date, payment_type, length_or_type_text)
+        client = self.get_or_create_client(client_name, payment_date, session=session)
+
         payment, created = codementor_models.Payment.objects.get_or_create(
             date=payment_date, client=client, earnings=earnings_amount)
         if created:
             payment.free_preview = self.has_free_preview(payment_div)
-            payment.type = self.parse_payment_type(length_or_type_text)
+            payment.type = payment_type
+            payment.session = session
             payment.payout = payout
-            end_date = payment.date + datetime.timedelta(days=1)
-            sessions = codementor_models.Session.objects.filter(
-                client=client, payment__isnull=True, started_at__gte=payment.date,
-                started_at__lte=end_date)
-            if payment.type == codementor_models.PaymentType.SESSION:
-                length = self.parse_length(length_or_type_text.strip())
-                sessions = sessions.filter(length=length)
-            if sessions.count() > 0:
-                payment.session = sessions[0]
-            else:
-                # TODO figure out why sometimes no session is found
-                print('No sessions found')
             payment.save()
         return payment
 
@@ -239,7 +253,12 @@ class PayoutSpider(Spider):
         for payment in payments:
             payment_div = payment.xpath('./div/div[@class="info_padding"]')
             payment_info = payment_div.xpath('./text()').extract()
-            payment_date = self.parse_date(payment_info[0])
+            parsed_date = self.parse_date(payment_info[0])
+            # The date on the payment page does not have a time, but ends up with an hour value
+            # when the timezone is localized. We want just the date value.
+            # TODO The payment date is still wrong at times, perhaps due to timezones.
+            payment_date = datetime.datetime(year=parsed_date.year, month=parsed_date.month,
+                                             day=parsed_date.day, tzinfo=parsed_date.tzinfo)
             client_name = self.clean_client_name(payment_info[1])
             length_or_type_text = payment_info[2]
 
