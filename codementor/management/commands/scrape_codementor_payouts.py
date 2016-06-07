@@ -260,12 +260,18 @@ class PayoutSpider(Spider):
             payment_date = datetime.datetime(year=parsed_date.year, month=parsed_date.month,
                                              day=parsed_date.day, tzinfo=parsed_date.tzinfo)
             client_name = self.clean_client_name(payment_info[1])
-            length_or_type_text = payment_info[2]
+            index = 2
+            if not client_name:
+                client_name = self.clean_client_name(payment_info[index])
+                index += 1
+            length_or_type_text = payment_info[index]
+            index += 1
 
             # Sessions with 15min free have an extra div inserted, so earnings are offset by 1
-            earnings_amount = payment_info[3].strip()
+            earnings_amount = payment_info[index].strip()
+            index += 1
             if not earnings_amount:
-                earnings_amount = payment_info[4].strip()
+                earnings_amount = payment_info[index].strip()
             earnings_amount = self.parse_amount(earnings_amount)
 
             payment = self.get_or_create_payment(payment_div, payment_date, client_name,
@@ -283,20 +289,29 @@ class PayoutSpider(Spider):
             payment_info = payment_div.xpath('./text()').extract()
             payment_date = self.parse_date(payment_info[0])
             if not payment_date:
-                continue
+                # Ignore upcoming monthly payments
+                if payment_info[0].find(' Week ') > 0:
+                    continue
+                raise Exception('No payment date found for: %s' % payment_info)
             client_name = self.clean_client_name(payment_info[1])
+            index = 2
+            if not client_name:
+                client_name = self.clean_client_name(payment_info[index])
+                index += 1
 
             if len(payment_info) < 4:
                 # For offline help payments, there is no length and amount is at index 2
                 length_or_type_text = "Offline Help"
-                earnings_amount = payment_info[2]
+                earnings_amount = payment_info[index]
             else:
                 # For sessions, length is at index 2 and amount is after
-                length_or_type_text = payment_info[2]
-                earnings_amount = payment_info[3].strip()
+                length_or_type_text = payment_info[index]
+                index += 1
+                earnings_amount = payment_info[index].strip()
+                index += 1
                 # Sessions with 15min free have an extra div inserted, so earnings are offset by 1
                 if not earnings_amount:
-                    earnings_amount = payment_info[4].strip()
+                    earnings_amount = payment_info[index].strip()
             earnings_amount = self.parse_amount(earnings_amount)
             tips_div = payment_div.xpath('./*[@id="tips"]')
             if tips_div:
