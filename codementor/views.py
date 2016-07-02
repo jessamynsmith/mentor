@@ -130,7 +130,7 @@ def statistics(request):
 
     sessions = codementor_models.Session.objects.all()
 
-    total_hours_worked = (sessions.aggregate(Sum('length'))['length__sum'])/60,
+    total_hours_worked = sessions.aggregate(Sum('length'))['length__sum']/60
 
     graph_types = [
         ['payout_history', 'Payout History'],
