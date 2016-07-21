@@ -132,6 +132,8 @@ def statistics(request):
 
     total_hours_worked = sessions.aggregate(Sum('length'))['length__sum']/60
 
+    sessions_per_client = float(sessions.count()) / codementor_models.Client.objects.count()
+
     graph_types = [
         ['payout_history', 'Payout History'],
         ['payment_history', 'Payment History'],
@@ -158,7 +160,7 @@ def statistics(request):
         'total_session_length': int(round((sessions.aggregate(Sum('length'))['length__sum']) / 60)),
         'average_session_length': int(round(sessions.aggregate(Avg('length'))['length__avg'])),
         'hours_worked': total_hours_worked,
-        'sessions_per_client': (sessions.count()/codementor_models.Client.objects.count()),
+        'sessions_per_client': round(sessions_per_client, 2),
         'pending_total': pending_total,
         'graph_types': graph_types
     }
