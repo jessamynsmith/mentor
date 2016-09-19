@@ -79,8 +79,8 @@ class Client(models.Model):
     username = models.CharField(max_length=100, blank=True, null=True)
     # Add client timezone and other info from client page?
     started_at = models.DateTimeField(null=True, blank=True)
-    continent = EnumField(Continent, max_length=20, default=Continent.UNKNOWN)
-    gender = EnumField(Gender, max_length=20, default=Gender.UNKNOWN)
+    continent = EnumField(Continent, max_length=20, null=True, blank=True)
+    gender = EnumField(Gender, max_length=20, null=True, blank=True)
     population_groups = models.ManyToManyField(PopulationGroup, blank=True, default=None)
 
     class Meta:
@@ -94,6 +94,8 @@ class Client(models.Model):
         return ', '.join(population_group_names)
 
     def user_external_link(self):
+        if self.username is None:
+            return ''
         return ('<a href="%s%s" target="_blank">%s</a>'
                 % (settings.SOURCE_URL, self.username, self.username))
 
