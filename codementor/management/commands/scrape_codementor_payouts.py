@@ -51,7 +51,7 @@ class PayoutSpider(Spider):
 
     def after_login(self, response):
         # If login failed, error out
-        profile_link = "<a href='/%s'>" % self.username
+        profile_link = 'href="/%s"' % self.username
         if profile_link not in response.body:
             self.logger.error("Login failed")
             return
