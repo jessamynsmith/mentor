@@ -104,7 +104,8 @@ class PayoutSpider(Spider):
 
             confirm_links = session.xpath('./div[contains(@class, "confirm")]/div/div/a')
             chat_click = confirm_links[2].xpath('./@ng-click').extract()[0]
-            chat_data = chat_click[chat_click.find('(')+1:chat_click.find(')')]
+            # Remove JS call around JSON object
+            chat_data = chat_click[chat_click.find('(')+1:chat_click.rfind(')')]
             chat_data = json.loads(chat_data.replace("'", '"'))
             username = chat_data['contact']['username']
 
