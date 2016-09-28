@@ -102,8 +102,9 @@ class PayoutSpider(Spider):
             session_length = self.parse_length(time_pieces[4].replace('Length:', ''))
             started_at = finished_at - datetime.timedelta(minutes=session_length)
 
-            confirm_links = session.xpath('./div[contains(@class, "confirm")]/div/div/a')
-            chat_click = confirm_links[2].xpath('./@ng-click').extract()[0]
+            confirm_links = session.xpath(
+                './div[contains(@class, "confirm")]/div/div/a[contains(@ng-click, "Chat")]')
+            chat_click = confirm_links[0].xpath('./@ng-click').extract()[0]
             # Remove JS call around JSON object
             chat_data = chat_click[chat_click.find('(')+1:chat_click.rfind(')')]
             chat_data = json.loads(chat_data.replace("'", '"'))
@@ -359,6 +360,7 @@ class Command(NoArgsCommand):
     def handle(self, *args, **options):
         delete = options.get('delete')
         if delete:
+            # TODO only delete and re-retrieve recent activity (maybe last week)
             codementor_models.Review.objects.all().delete()
             codementor_models.Session.objects.all().delete()
             codementor_models.Payout.objects.all().delete()
