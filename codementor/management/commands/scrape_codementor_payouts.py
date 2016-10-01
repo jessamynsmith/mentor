@@ -325,7 +325,7 @@ class PayoutSpider(CrawlSpider):
             tips_div = payment_div.xpath('./*[@id="tips"]')
             if tips_div:
                 tips = tips_div.xpath('./text()').extract()
-                if not tips[0].find(u'review'):
+                if tips[0].find(u'review') < 0:
                     tip_text = tips[0].split(' ')[1]
                     tip_amount = self.parse_amount(tip_text.split(')')[0])
                     earnings_amount += tip_amount
