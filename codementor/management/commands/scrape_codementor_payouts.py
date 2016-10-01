@@ -6,7 +6,7 @@ from optparse import make_option
 import os
 import pytz
 from scrapy import FormRequest, Request
-from scrapy.spiders import Spider
+from scrapy.spiders import CrawlSpider
 from scrapy.crawler import CrawlerProcess
 
 from django.conf import settings
@@ -19,8 +19,10 @@ from codementor import models as codementor_models
 
 # TODO get client timezone, other fields?
 
+start_date = None
 
-class PayoutSpider(Spider):
+
+class PayoutSpider(CrawlSpider):
     name = "payout"
     allowed_domains = [settings.SOURCE_DOMAIN]
     start_urls = [
@@ -37,6 +39,7 @@ class PayoutSpider(Spider):
         super(PayoutSpider, self).__init__()
         self.username = os.environ['CODEMENTOR_USERNAME']
         self.password = os.environ['CODEMENTOR_PASSWORD']
+        self.start_date = start_date
 
     def parse(self, response):
         login_form = {
@@ -73,6 +76,8 @@ class PayoutSpider(Spider):
             review_info = review_info_text.extract()
             reviewer_name = review_info[0].strip()
             review_date = self.parse_date(review_info[1])
+            if review_date < self.start_date:
+                break
             review_content_text = review.xpath('./div[contains(@class, "content")]/div/text()')
             review_content = review_content_text.extract()[0].strip()
 
@@ -101,6 +106,8 @@ class PayoutSpider(Spider):
             finished_at = self.parse_date(time_pieces[2])
             session_length = self.parse_length(time_pieces[4].replace('Length:', ''))
             started_at = finished_at - datetime.timedelta(minutes=session_length)
+            if started_at < self.start_date:
+                break
 
             confirm_links = session.xpath(
                 './div[contains(@class, "confirm")]/div/div/a[contains(@ng-click, "Chat")]')
@@ -335,6 +342,8 @@ class PayoutSpider(Spider):
                                                  'div/div[contains(@class, "info")]/text()')
             payout_info = payout_info_text.extract()
             payout_date = self.parse_date(payout_info[2])
+            if payout_date < self.start_date:
+                break
             payout_method = getattr(codementor_models.PayoutMethod, payout_info[3].strip().upper())
             payout_amount = self.parse_amount(payout_info[5])
 
@@ -354,17 +363,31 @@ class Command(NoArgsCommand):
 
     option_list = NoArgsCommand.option_list + (
         make_option('--delete', action='store_true', dest='delete', default=False,
-                    help='Delete data before scraping.'),
+                    help='Delete recent data before scraping.'),
+        make_option('--delete-all', action='store_true', dest='delete_all', default=False,
+                    help='Delete all data before scraping.'),
     )
 
     def handle(self, *args, **options):
+        # It would be better to pass this in as a parameter to PayoutSpider
+        global start_date
+        start_date = datetime.datetime(2015, 1, 1, tzinfo=pytz.UTC)
+
         delete = options.get('delete')
-        if delete:
-            # TODO only delete and re-retrieve recent activity (maybe last week)
+        delete_all = options.get('delete_all')
+        previous_payouts = codementor_models.Payout.objects.all().order_by('-date')
+        if delete_all or (delete and previous_payouts.count() == 0):
             codementor_models.Review.objects.all().delete()
             codementor_models.Session.objects.all().delete()
             codementor_models.Payout.objects.all().delete()
             codementor_models.Payment.objects.all().delete()
+        elif delete:
+            previous_payout = previous_payouts[0]
+            start_date = previous_payout.date
+            codementor_models.Review.objects.filter(date__gt=start_date).delete()
+            codementor_models.Session.objects.filter(started_at__gt=start_date).delete()
+            previous_payout.delete()
+            codementor_models.Payment.objects.filter(payout__isnull=True).delete()
 
         process = CrawlerProcess({
             'USER_AGENT': 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)'
