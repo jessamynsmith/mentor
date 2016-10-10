@@ -113,7 +113,7 @@ class PayoutSpider(CrawlSpider):
                 './div[contains(@class, "confirm")]/div/div/a[contains(@ng-click, "Chat")]')
             chat_click = confirm_links[0].xpath('./@ng-click').extract()[0]
             # Remove JS call around JSON object
-            chat_data = chat_click[chat_click.find('(')+1:chat_click.rfind(')')]
+            chat_data = chat_click[chat_click.find('(') + 1:chat_click.rfind(')')]
             chat_data = json.loads(chat_data.replace("'", '"'))
             username = chat_data['contact']['username']
 
@@ -240,19 +240,25 @@ class PayoutSpider(CrawlSpider):
 
     def get_or_create_payment(self, payment_div, payment_date, client_name, earnings_amount,
                               length_or_type_text, payout=None):
+        payment = None
         payment_type = self.parse_payment_type(length_or_type_text)
-
         session = self.find_session(client_name, payment_date, payment_type, length_or_type_text)
         client = self.get_or_create_client(client_name, payment_date, session=session)
 
-        payment, created = codementor_models.Payment.objects.get_or_create(
-            date=payment_date, client=client, earnings=earnings_amount)
-        if created:
-            payment.free_preview = self.has_free_preview(payment_div)
-            payment.type = payment_type
-            payment.session = session
-            payment.payout = payout
-            payment.save()
+        existing_payments = codementor_models.Payment.objects.filter(
+            client=client, date=payment_date)
+        for existing_payment in existing_payments:
+            # Find payment on same day that is within 20%. This deals with amount changing as
+            # the weekly bonus levels are achieved
+            if abs(existing_payment.earnings - earnings_amount) < earnings_amount * 0.20:
+                payment = existing_payment
+
+        if not payment:
+            has_free_preview = self.has_free_preview(payment_div)
+            payment = codementor_models.Payment.objects.create(
+                date=payment_date, client=client, earnings=earnings_amount, type=payment_type,
+                free_preview=has_free_preview, session=session, payout=payout)
+
         return payment
 
     def parse_payments(self, payout, payout_data):
@@ -366,6 +372,8 @@ class Command(NoArgsCommand):
                     help='Delete recent data before scraping.'),
         make_option('--delete-all', action='store_true', dest='delete_all', default=False,
                     help='Delete all data before scraping.'),
+        make_option('--retrieve-all', action='store_true', dest='retrieve_all', default=False,
+                    help='Retrieve all data from the beginning of time.'),
     )
 
     def handle(self, *args, **options):
@@ -375,6 +383,9 @@ class Command(NoArgsCommand):
 
         delete = options.get('delete')
         delete_all = options.get('delete_all')
+        retrieve_all = options.get('retrieve_all')
+
+        previous_payout = None
         previous_payouts = codementor_models.Payout.objects.all().order_by('-date')
         if delete_all or (delete and previous_payouts.count() == 0):
             codementor_models.Review.objects.all().delete()
@@ -383,11 +394,13 @@ class Command(NoArgsCommand):
             codementor_models.Payment.objects.all().delete()
         elif delete:
             previous_payout = previous_payouts[0]
-            start_date = previous_payout.date
             codementor_models.Review.objects.filter(date__gt=start_date).delete()
             codementor_models.Session.objects.filter(started_at__gt=start_date).delete()
             previous_payout.delete()
             codementor_models.Payment.objects.filter(payout__isnull=True).delete()
+
+        if not retrieve_all and previous_payout:
+            start_date = previous_payout.date
 
         process = CrawlerProcess({
             'USER_AGENT': 'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)'
