@@ -250,14 +250,19 @@ class PayoutSpider(CrawlSpider):
         for existing_payment in existing_payments:
             # Find payment on same day that is within 20%. This deals with amount changing as
             # the weekly bonus levels are achieved
-            if abs(existing_payment.earnings - earnings_amount) < earnings_amount * 0.20:
+            if abs(existing_payment.earnings - earnings_amount) < earnings_amount * Decimal("0.2"):
                 payment = existing_payment
 
         if not payment:
             has_free_preview = self.has_free_preview(payment_div)
-            payment = codementor_models.Payment.objects.create(
-                date=payment_date, client=client, earnings=earnings_amount, type=payment_type,
-                free_preview=has_free_preview, session=session, payout=payout)
+            payment = codementor_models.Payment(date=payment_date, client=client, type=payment_type,
+                                                free_preview=has_free_preview)
+
+        # Set all values that might possibly have changed
+        payment.earnings = earnings_amount
+        payment.session = session
+        payment.payout = payout
+        payment.save()
 
         return payment
 
@@ -271,7 +276,9 @@ class PayoutSpider(CrawlSpider):
             parsed_date = self.parse_date(payment_info[0])
             # The date on the payment page does not have a time, but ends up with an hour value
             # when the timezone is localized. We want just the date value.
-            # TODO The payment date is still wrong at times, perhaps due to timezones.
+            # TODO The payment date is still wrong at times (maybe pending vs completed?). E.g.:
+            # 2016-10-09 00:00:00-04 | f |    18.70 |       696 |           |     132173 | Session
+            # 2016-10-08 20:00:00-04 | f |    18.70 |       696 |      8011 |            | Session
             payment_date = datetime.datetime(year=parsed_date.year, month=parsed_date.month,
                                              day=parsed_date.day, tzinfo=parsed_date.tzinfo)
             client_name = self.clean_client_name(payment_info[1])
@@ -302,6 +309,7 @@ class PayoutSpider(CrawlSpider):
         for payment_data in pending_payments:
             payment_div = payment_data.xpath('./div/div/div/div[contains(@class, "lesson_info")]')
             payment_info = payment_div.xpath('./text()').extract()
+            # TODO I think this may be getting the wrong date somehow
             payment_date = self.parse_date(payment_info[0])
             if not payment_date:
                 # Ignore upcoming monthly payments
