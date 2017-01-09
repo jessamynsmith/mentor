@@ -120,6 +120,8 @@ def statistics(request):
     payouts = codementor_models.Payout.objects.all()
     total_payouts = payouts.count()
     payouts_by_total_earnings = payouts.order_by('-total_earnings')
+    first_payout = payouts[total_payouts - 1]
+    last_payout = payouts[0]
 
     payments = codementor_models.Payment.objects.all()
     number_of_payments = payments.count()
@@ -131,6 +133,8 @@ def statistics(request):
     sessions = codementor_models.Session.objects.all()
 
     total_hours_worked = sessions.aggregate(Sum('length'))['length__sum']/60
+    weeks_worked = (last_payout.date - first_payout.date).days / 7.0
+    average_hours_per_week = total_hours_worked / weeks_worked
 
     sessions_per_client = float(sessions.count()) / codementor_models.Client.objects.count()
 
@@ -147,8 +151,9 @@ def statistics(request):
         'payout_total': payouts.aggregate(Sum('amount'))['amount__sum'],
         'earnings_total': payouts.aggregate(Sum('total_earnings'))['total_earnings__sum'],
         'average_payout': payouts.aggregate(Avg('amount'))['amount__avg'],
-        'first_payout': payouts[total_payouts - 1],
-        'last_payout': payouts[0],
+        'average_hours_per_week': int(round(average_hours_per_week)),
+        'first_payout': first_payout,
+        'last_payout': last_payout,
         'highest_payout': payouts_by_total_earnings[0],
         'lowest_payout': payouts_by_total_earnings[total_payouts - 1],
         'number_of_payments': number_of_payments,
