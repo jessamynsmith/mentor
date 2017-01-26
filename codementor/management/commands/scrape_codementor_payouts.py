@@ -66,7 +66,7 @@ class PayoutSpider(CrawlSpider):
 
     def parse_timezone_and_reviews(self, response):
         timezone_div = response.xpath('//div[contains(@class, "timezone")]')
-        timezone_text = timezone_div.xpath('./text()').extract()[1]
+        timezone_text = timezone_div.xpath('./text()').extract()[0]
         timezone_name = timezone_text.split('(')[0].strip()
         self.timezone = pytz.timezone(self.known_timezones[timezone_name])
 
