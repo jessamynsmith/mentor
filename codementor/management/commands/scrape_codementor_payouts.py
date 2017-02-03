@@ -1,5 +1,6 @@
 import datetime
 import dateutil.parser
+from dateutil import relativedelta
 from decimal import Decimal
 import json
 from optparse import make_option
@@ -58,6 +59,24 @@ class PayoutSpider(CrawlSpider):
         if profile_link not in response.body:
             self.logger.error("Login failed")
             return
+
+        bonus_div = response.xpath('//div[contains(@class, "weekly-bonus")]')
+        value_divs = bonus_div.xpath('./div[contains(@class, "weekly-bonus__block__value")]/text()')
+        unique_clients = int(value_divs[0].extract()[0])
+        avg_rating = Decimal(value_divs[1].extract()[0])
+        platform_fee = value_divs[2].extract()[0]
+
+        today = datetime.date.today()
+        rd = relativedelta.relativedelta(weekday=relativedelta.SU)
+        next_sunday = today + rd
+
+        rating = codementor_models.WeeklyRating.objects.filter(week_end=next_sunday).first()
+        if not rating:
+            rating = codementor_models.WeeklyRating(week_end=next_sunday)
+        rating.unique_clients = unique_clients
+        rating.avg_rating = avg_rating
+        rating.platform_fee = platform_fee
+        rating.save()
 
         return Request(
             "https://www.codementor.io/%s" % self.username,

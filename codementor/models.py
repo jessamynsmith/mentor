@@ -210,3 +210,17 @@ class Payment(models.Model):
 
     def __str__(self):
         return '%s (%s) - %s' % (self.earnings, self.date, self.client)
+
+
+class WeeklyRating(models.Model):
+    week_end = models.DateField(unique=True)
+    unique_clients = models.IntegerField()
+    avg_rating = models.DecimalField(max_digits=4, decimal_places=2)
+    platform_fee = models.CharField(max_length=5)
+
+    class Meta:
+        ordering = ['-week_end']
+
+    def __str__(self):
+        return 'Avg %s (%s clients) ending %s' % (self.avg_rating, self.unique_clients,
+                                                  self.week_end)
