@@ -6,16 +6,17 @@ import json
 from optparse import make_option
 import os
 import pytz
-from scrapy import FormRequest, Request
+from scrapy import FormRequest, Request, signals
 from scrapy.spiders import CrawlSpider
 from scrapy.crawler import CrawlerProcess
 
 from django.conf import settings
-from django.core.management.base import NoArgsCommand
+from django.core.management.base import BaseCommand
 from django.db import IntegrityError
 from django.db.models import Q
 
 from codementor import models as codementor_models
+from codementor.utils import format_status
 
 
 # TODO get client timezone, other fields?
@@ -42,6 +43,15 @@ class PayoutSpider(CrawlSpider):
         self.password = os.environ['CODEMENTOR_PASSWORD']
         self.start_date = start_date
 
+    @classmethod
+    def from_crawler(cls, crawler, *args, **kwargs):
+        spider = super(CrawlSpider, cls).from_crawler(crawler, *args, **kwargs)
+        crawler.signals.connect(spider.spider_closed, signal=signals.spider_closed)
+        return spider
+
+    def spider_closed(self, spider):
+        spider.logger.info('Spider finished: %s', format_status())
+
     def parse(self, response):
         login_form = {
             'login': self.username,
@@ -62,9 +72,9 @@ class PayoutSpider(CrawlSpider):
 
         bonus_div = response.xpath('//div[contains(@class, "weekly-bonus")]')
         value_divs = bonus_div.xpath('./div[contains(@class, "weekly-bonus__block__value")]/text()')
-        unique_clients = int(value_divs[0].extract()[0])
-        avg_rating = Decimal(value_divs[1].extract()[0])
-        platform_fee = value_divs[2].extract()[0]
+        unique_clients = int(value_divs[0].extract())
+        avg_rating = Decimal(value_divs[1].extract())
+        platform_fee = value_divs[2].extract()
 
         today = datetime.date.today()
         rd = relativedelta.relativedelta(weekday=relativedelta.SU)
@@ -391,10 +401,10 @@ class PayoutSpider(CrawlSpider):
             self.parse_payments(payout, payout_data)
 
 
-class Command(NoArgsCommand):
+class Command(BaseCommand):
     help = 'Scrape payout information from codementor and store locally'
 
-    option_list = NoArgsCommand.option_list + (
+    option_list = BaseCommand.option_list + (
         make_option('--delete', action='store_true', dest='delete', default=False,
                     help='Delete recent data before scraping.'),
         make_option('--delete-all', action='store_true', dest='delete_all', default=False,

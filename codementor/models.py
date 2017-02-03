@@ -222,5 +222,5 @@ class WeeklyRating(models.Model):
         ordering = ['-week_end']
 
     def __str__(self):
-        return 'Avg %s (%s clients) ending %s' % (self.avg_rating, self.unique_clients,
-                                                  self.week_end)
+        return ('Avg rating %s, fee %s (%s clients) ending %s' %
+                (self.avg_rating, self.platform_fee, self.unique_clients, self.week_end))
