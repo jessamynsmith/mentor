@@ -9,5 +9,5 @@ def format_status():
     pending_total = payments.filter(payout__isnull=True).aggregate(Sum('earnings'))['earnings__sum']
     payments_to_date = 'Payments to date: $%s' % pending_total
     weekly_rating = codementor_models.WeeklyRating.objects.all().order_by('-week_end').first()
-    status = '\n'.join(['', separator, payments_to_date, str(weekly_rating), separator])
+    status = '\n'.join([separator, payments_to_date, str(weekly_rating), separator])
     return status

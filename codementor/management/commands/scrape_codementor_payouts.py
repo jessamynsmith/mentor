@@ -50,7 +50,7 @@ class PayoutSpider(CrawlSpider):
         return spider
 
     def spider_closed(self, spider):
-        spider.logger.info('Spider finished: %s', format_status())
+        spider.logger.info('Spider finished:\n%s', format_status())
 
     def parse(self, response):
         login_form = {
