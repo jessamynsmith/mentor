@@ -9,6 +9,8 @@ def format_status():
     separator = '------------------------------'
     payments = codementor_models.Payment.objects.all()
     pending_total = payments.filter(payout__isnull=True).aggregate(Sum('earnings'))['earnings__sum']
+    if pending_total is None:
+        pending_total = Decimal('0')
     payments_to_date = 'Payments to date: ${}'.format(pending_total)
     weekly_rating = codementor_models.WeeklyRating.objects.all().order_by('-week_end').first()
     payment_increase = pending_total * Decimal("0.025")
