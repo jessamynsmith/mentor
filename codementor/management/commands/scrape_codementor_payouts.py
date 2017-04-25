@@ -1,7 +1,7 @@
 import datetime
 import dateutil.parser
 from dateutil import relativedelta
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 import json
 from optparse import make_option
 import os
@@ -28,7 +28,7 @@ class PayoutSpider(CrawlSpider):
     name = "payout"
     allowed_domains = [settings.SOURCE_DOMAIN]
     start_urls = [
-        "%susers/sign_in" % settings.SOURCE_URL
+        "%slogin" % settings.SOURCE_URL
     ]
     known_timezones = {
         'Pacific Time': 'US/Pacific',
@@ -54,7 +54,7 @@ class PayoutSpider(CrawlSpider):
 
     def parse(self, response):
         login_form = {
-            'login': self.username,
+            'email': self.username,
             'password': self.password,
         }
         return FormRequest.from_response(
@@ -73,7 +73,10 @@ class PayoutSpider(CrawlSpider):
         bonus_div = response.xpath('//div[contains(@class, "weekly-bonus")]')
         value_divs = bonus_div.xpath('./div[contains(@class, "weekly-bonus__block__value")]/text()')
         unique_clients = int(value_divs[0].extract())
-        avg_rating = Decimal(value_divs[1].extract())
+        try:
+            avg_rating = Decimal(value_divs[1].extract())
+        except InvalidOperation:
+            avg_rating = Decimal('0')
         platform_fee = value_divs[2].extract()
 
         today = datetime.date.today()
@@ -94,6 +97,7 @@ class PayoutSpider(CrawlSpider):
         )
 
     def parse_timezone_and_reviews(self, response):
+        # Missing review optimistic and funny
         timezone_div = response.xpath('//div[contains(@class, "timezone")]')
         timezone_text = timezone_div.xpath('./text()').extract()[0]
         timezone_name = timezone_text.split('(')[0].strip()
@@ -233,6 +237,7 @@ class PayoutSpider(CrawlSpider):
         return review
 
     def get_or_create_session(self, client, session_id, started_at, length, review):
+        # Are all sessions retrieving?
         session, created = codementor_models.Session.objects.get_or_create(
             client=client, session_id=session_id, started_at=started_at, length=length)
         if created:
@@ -445,3 +450,5 @@ class Command(BaseCommand):
 
         process.crawl(PayoutSpider)
         process.start()
+
+# Check codementor totals
