@@ -3,10 +3,10 @@ mentor
 
 Data for mentoring business
 
+### Setup
 
-
-pip install
-bower install
+    pip install -r requirements.txt
+    bower install
 
 
 Environment variables:
